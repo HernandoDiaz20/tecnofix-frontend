@@ -1,7 +1,5 @@
 import React from 'react';
 import type { DashboardWorkOrder } from '@/types/dashboard';
-import { Badge } from '@/components/ui/badge';
-import { ArrowRight, AlertCircle } from 'lucide-react';
 
 interface RecentOrdersTableProps {
   orders: DashboardWorkOrder[] | undefined;
@@ -14,78 +12,90 @@ export const RecentOrdersTable: React.FC<RecentOrdersTableProps> = ({
   isLoading, 
   isError 
 }) => {
-  const getStatusColor = (status: DashboardWorkOrder['currentStatus'] | undefined) => {
+  const getStatusBadge = (status: DashboardWorkOrder['currentStatus'] | undefined) => {
     switch (status) {
-      case 'INGRESADO': return 'bg-primary/10 text-primary';
-      case 'EN_REVISION': return 'bg-primary/10 text-primary';
-      case 'ESPERANDO_REPUESTO': return 'bg-[#f59e0b]/10 text-[#d97706]';
-      case 'EN_REPARACION': return 'bg-[#f59e0b]/10 text-[#d97706]';
-      case 'REPARADO': return 'bg-[#10b981]/10 text-[#059669]';
-      case 'LISTO_PARA_ENTREGA': return 'bg-[#10b981]/10 text-[#059669]';
-      case 'ENTREGADO': return 'bg-outline-variant/30 text-on-surface-variant';
-      default: return 'bg-surface-container-high text-on-surface';
+      case 'INGRESADO': 
+      case 'EN_REVISION': 
+        return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-container text-on-primary-container">En Diagnóstico</span>;
+      case 'ESPERANDO_REPUESTO': 
+        return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-surface-container-highest text-on-surface">Esperando Pieza</span>;
+      case 'EN_REPARACION': 
+        return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-container text-on-primary-container">En Reparación</span>;
+      case 'REPARADO': 
+      case 'LISTO_PARA_ENTREGA': 
+      case 'ENTREGADO': 
+        return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-secondary text-on-secondary">Completado</span>;
+      default: 
+        return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-surface-container-highest text-on-surface">Desconocido</span>;
     }
   };
 
-  const getStatusLabel = (status: DashboardWorkOrder['currentStatus'] | undefined) => {
-    if (!status) return 'Desconocido';
-    return status.replace(/_/g, ' ');
+  const formatDate = (dateString: string) => {
+    const d = new Date(dateString);
+    return d.toLocaleDateString('es-ES', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
   if (isError) {
     return (
-      <div className="flex flex-col items-center justify-center p-8 bg-surface rounded-xl border border-outline-variant shadow-sm text-center">
-        <AlertCircle className="w-10 h-10 text-error mb-4" />
-        <p className="text-on-surface-variant font-medium">Error al cargar las órdenes recientes.</p>
+      <div className="flex flex-col items-center justify-center p-8 bg-surface-container-lowest rounded-xl border border-outline-variant/50 shadow-sm text-center h-full">
+        <span className="material-symbols-outlined text-error text-4xl mb-4">error</span>
+        <p className="text-on-surface-variant text-sm font-medium">Error al cargar las órdenes recientes.</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-surface rounded-xl border border-outline-variant flex flex-col overflow-hidden shadow-sm h-full">
-      <div className="p-5 border-b border-outline-variant flex justify-between items-center bg-surface">
-        <h3 className="text-h3 font-semibold text-on-surface">Últimas Órdenes Recibidas</h3>
-        <button className="text-sm text-primary hover:text-primary/80 transition-colors flex items-center gap-1 font-medium">
-          Ver Todas <ArrowRight className="w-4 h-4" />
-        </button>
+    <div className="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/50 overflow-hidden flex flex-col h-full">
+      <div className="p-6 border-b border-outline-variant/50 flex justify-between items-center bg-surface-bright">
+        <h3 className="text-xl font-semibold text-on-surface">Órdenes Recientes</h3>
+        <div className="flex gap-2">
+          <button className="px-3 py-1.5 border border-outline-variant rounded-md text-sm font-semibold hover:bg-surface-container transition-colors">Filtrar</button>
+          <button className="px-3 py-1.5 border border-outline-variant rounded-md text-sm font-semibold hover:bg-surface-container transition-colors">Exportar</button>
+        </div>
       </div>
       
       <div className="overflow-x-auto flex-1">
-        <table className="w-full text-left border-collapse min-w-[600px]">
-          <thead className="bg-surface-container-low border-b border-outline-variant">
+        <table className="w-full text-left border-collapse min-w-[700px]">
+          <thead className="bg-surface-container-low border-b border-outline-variant/50">
             <tr>
-              <th className="py-3 px-5 text-xs font-semibold text-on-surface-variant uppercase tracking-wider">ID Orden</th>
-              <th className="py-3 px-5 text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Cliente</th>
-              <th className="py-3 px-5 text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Equipo</th>
-              <th className="py-3 px-5 text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Estado</th>
+              <th className="py-3 px-6 text-sm font-semibold text-on-surface-variant">Orden</th>
+              <th className="py-3 px-6 text-sm font-semibold text-on-surface-variant">Cliente</th>
+              <th className="py-3 px-6 text-sm font-semibold text-on-surface-variant">Dispositivo</th>
+              <th className="py-3 px-6 text-sm font-semibold text-on-surface-variant">Estado</th>
+              <th className="py-3 px-6 text-sm font-semibold text-on-surface-variant">Fecha</th>
+              <th className="py-3 px-6 text-sm font-semibold text-on-surface-variant text-right">Acciones</th>
             </tr>
           </thead>
-          <tbody className="text-sm">
+          <tbody className="text-sm divide-y divide-outline-variant/30">
             {isLoading ? (
               Array.from({ length: 5 }).map((_, i) => (
-                <tr key={i} className="border-b border-outline-variant">
-                  <td className="py-3 px-5"><div className="h-4 bg-surface-container-high rounded w-20 animate-pulse"></div></td>
-                  <td className="py-3 px-5"><div className="h-4 bg-surface-container-high rounded w-32 animate-pulse"></div></td>
-                  <td className="py-3 px-5"><div className="h-4 bg-surface-container-high rounded w-32 animate-pulse"></div></td>
-                  <td className="py-3 px-5"><div className="h-5 bg-surface-container-high rounded-full w-24 animate-pulse"></div></td>
+                <tr key={i} className="hover:bg-surface-bright transition-colors">
+                  <td className="py-4 px-6"><div className="h-4 bg-surface-container-high rounded w-20 animate-pulse"></div></td>
+                  <td className="py-4 px-6"><div className="h-4 bg-surface-container-high rounded w-32 animate-pulse"></div></td>
+                  <td className="py-4 px-6"><div className="h-4 bg-surface-container-high rounded w-32 animate-pulse"></div></td>
+                  <td className="py-4 px-6"><div className="h-5 bg-surface-container-high rounded-full w-24 animate-pulse"></div></td>
+                  <td className="py-4 px-6"><div className="h-4 bg-surface-container-high rounded w-20 animate-pulse"></div></td>
+                  <td className="py-4 px-6 text-right"><div className="h-4 bg-surface-container-high rounded w-8 animate-pulse inline-block"></div></td>
                 </tr>
               ))
             ) : !orders || orders.length === 0 ? (
               <tr>
-                <td colSpan={4} className="py-8 text-center text-on-surface-variant">
+                <td colSpan={6} className="py-8 text-center text-on-surface-variant">
                   No hay órdenes registradas aún.
                 </td>
               </tr>
             ) : (
               orders.map((order) => (
-                <tr key={order.id} className="border-b border-outline-variant hover:bg-surface-container-lowest transition-colors cursor-pointer last:border-0">
-                  <td className="py-3 px-5 font-data-mono text-on-surface-variant text-xs">{order.guideNumber}</td>
-                  <td className="py-3 px-5 font-medium text-on-surface">{order.customer?.fullName || 'Cliente no asignado'}</td>
-                  <td className="py-3 px-5 text-on-surface-variant">{order.deviceBrand} {order.deviceModel}</td>
-                  <td className="py-3 px-5">
-                    <Badge variant="outline" className={`border-0 font-medium text-[11px] px-2 py-0.5 ${getStatusColor(order.currentStatus)}`}>
-                      {getStatusLabel(order.currentStatus)}
-                    </Badge>
+                <tr key={order.id} className="hover:bg-surface-bright transition-colors cursor-pointer">
+                  <td className="py-3 px-6 font-medium text-on-surface">{order.guideNumber}</td>
+                  <td className="py-3 px-6">{order.customer?.fullName || 'Cliente no asignado'}</td>
+                  <td className="py-3 px-6 text-on-surface-variant">{order.deviceBrand} {order.deviceModel}</td>
+                  <td className="py-3 px-6">{getStatusBadge(order.currentStatus)}</td>
+                  <td className="py-3 px-6 text-on-surface-variant">{formatDate(order.createdAt)}</td>
+                  <td className="py-3 px-6 text-right">
+                    <button className="text-outline hover:text-primary transition-colors">
+                      <span className="material-symbols-outlined text-sm">more_vert</span>
+                    </button>
                   </td>
                 </tr>
               ))
@@ -93,6 +103,10 @@ export const RecentOrdersTable: React.FC<RecentOrdersTableProps> = ({
           </tbody>
         </table>
       </div>
+      <div className="p-4 border-t border-outline-variant/50 bg-surface-bright flex justify-center mt-auto">
+        <button className="text-primary text-sm font-semibold hover:underline">Ver Todas las Órdenes</button>
+      </div>
     </div>
   );
 };
+
