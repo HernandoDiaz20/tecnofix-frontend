@@ -1,25 +1,8 @@
 import React, { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import {
-  LayoutDashboard,
-  Package,
-  Warehouse,
-  Wrench,
-  Users,
-  HardHat,
-  Calendar,
-  ClipboardList,
-  ShieldCheck,
-  BarChart3,
-  FileSearch,
-  LogOut,
-  Menu,
-  Bell,
-  X,
-  MonitorSmartphone
-} from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Menu, X } from 'lucide-react'; // Fallback para botones móviles si no queremos usar Material Symbols ahí, pero usaremos Material
 
 export const AdminLayout: React.FC = () => {
   const { user, logout } = useAuth();
@@ -35,20 +18,19 @@ export const AdminLayout: React.FC = () => {
   };
 
   const navItems = [
-    { label: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
-    { label: 'Órdenes', path: '/admin/ordenes', icon: ClipboardList },
-    { label: 'Citas', path: '/admin/citas', icon: Calendar },
-    { label: 'Productos', path: '/admin/productos', icon: Package },
-    { label: 'Inventario', path: '/admin/inventario', icon: Warehouse },
-    { label: 'Repuestos', path: '/admin/repuestos', icon: Wrench },
-    { label: 'Clientes', path: '/admin/clientes', icon: Users },
-    { label: 'Técnicos', path: '/admin/tecnicos', icon: HardHat },
-    { label: 'Garantías', path: '/admin/garantias', icon: ShieldCheck },
-    { label: 'Reportes', path: '/admin/reportes', icon: BarChart3 },
-    { label: 'Auditoría', path: '/admin/auditoria', icon: FileSearch },
+    { label: 'Dashboard', path: '/admin/dashboard', icon: 'dashboard' },
+    { label: 'Órdenes', path: '/admin/ordenes', icon: 'build' },
+    { label: 'Citas', path: '/admin/citas', icon: 'calendar_today' },
+    { label: 'Productos', path: '/admin/productos', icon: 'inventory_2' },
+    { label: 'Inventario', path: '/admin/inventario', icon: 'inventory' },
+    { label: 'Repuestos', path: '/admin/repuestos', icon: 'build_circle' },
+    { label: 'Clientes', path: '/admin/clientes', icon: 'group' },
+    { label: 'Técnicos', path: '/admin/tecnicos', icon: 'engineering' },
+    { label: 'Garantías', path: '/admin/garantias', icon: 'verified' },
+    { label: 'Reportes', path: '/admin/reportes', icon: 'analytics' },
+    { label: 'Auditoría', path: '/admin/auditoria', icon: 'history' },
   ];
 
-  // Helper to get initials
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -59,116 +41,130 @@ export const AdminLayout: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen bg-[#F7F9FB] text-[#191C1E] overflow-hidden antialiased">
+    <div className="flex h-screen bg-background text-on-background overflow-hidden antialiased">
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-20 md:hidden" 
+          className="fixed inset-0 bg-black/50 z-20 lg:hidden" 
           onClick={closeSidebar}
         />
       )}
 
-      {/* Sidebar */}
-      <aside
+      {/* SideNavBar */}
+      <nav
         className={cn(
-          "fixed md:relative inset-y-0 left-0 z-30 w-64 bg-white border-r border-[#E0E3E5] flex flex-col transition-transform duration-300 ease-in-out transform",
-          sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+          "fixed lg:relative inset-y-0 left-0 z-30 w-64 border-r border-outline-variant bg-surface-container-low flex flex-col transition-transform duration-300 ease-in-out transform lg:translate-x-0 h-screen",
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <div className="p-6 flex items-center justify-between">
+        <div className="p-6 flex items-center gap-3 border-b border-outline-variant justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-[#004AC6] flex items-center justify-center text-white">
-              <MonitorSmartphone className="w-6 h-6" />
-            </div>
+            <img 
+              alt="TecnoFix Logo" 
+              className="h-8 w-auto" 
+              src="https://lh3.googleusercontent.com/aida-public/AB6AXuD7tG9Vrq6YpqCQtzpvPupKZy0CHDM_cZ5o6px-NwkaHPW-oequVx_nnYktk-OEDCBbhzEx7THdRmPhfP6DFdD1zQ7bzL3hUbKA2eaa74omGFCtYMahUh9Bnpc3ct4Z5eG2YA4LWFkNUMqOM8v_bVR88QF5B1DDlLtk7h1AydPn6BOQloi_-e5AyV3Wu0KKWeDxWuhl_B43XH-lZRSDdIafEV_Z5gMIlAVaT3u8HY7LAS72mU1p984d"
+            />
             <div>
-              <h1 className="text-xl font-bold text-[#191C1E] leading-tight tracking-tight">
-                Admin Panel
-              </h1>
-              <p className="text-xs text-[#434655] font-medium">Gestión Técnica</p>
+              <h1 className="text-xl font-bold text-primary leading-tight tracking-tight">TecnoFix Admin</h1>
+              <p className="text-sm text-on-surface-variant">Technical Operations</p>
             </div>
           </div>
           <button 
-            className="md:hidden text-[#434655] p-2 -mr-2 rounded-full hover:bg-[#F2F4F6]"
+            className="lg:hidden text-on-surface-variant p-1 rounded-full hover:bg-surface-container"
             onClick={closeSidebar}
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <nav className="flex-1 overflow-y-auto py-4 px-3 flex flex-col gap-1">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                onClick={closeSidebar}
-                className={({ isActive }) =>
-                  cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-semibold tracking-wider uppercase transition-colors duration-200",
-                    isActive
-                      ? "bg-[#2563EB] text-white"
-                      : "text-[#434655] hover:bg-[#E0E3E5]"
-                  )
-                }
-              >
-                <Icon className="w-5 h-5" />
-                {item.label}
-              </NavLink>
-            );
-          })}
-        </nav>
-
-        <div className="p-4 mt-auto border-t border-[#E0E3E5]">
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-semibold tracking-wider uppercase text-[#434655] hover:bg-[#E0E3E5] transition-colors duration-200"
-          >
-            <LogOut className="w-5 h-5" />
-            Cerrar Sesión
-          </button>
+        <div className="flex-1 overflow-y-auto py-4">
+          <ul className="space-y-1 px-2">
+            {navItems.map((item) => (
+              <li key={item.path}>
+                <NavLink
+                  to={item.path}
+                  onClick={closeSidebar}
+                  className={({ isActive }) =>
+                    cn(
+                      "rounded-lg px-4 py-3 flex items-center gap-3 text-sm font-semibold transition-transform active:scale-95",
+                      isActive
+                        ? "bg-primary-container text-on-primary-container"
+                        : "text-on-surface-variant hover:bg-surface-container-high"
+                    )
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      <span 
+                        className="material-symbols-outlined" 
+                        style={isActive ? { fontVariationSettings: "'FILL' 1" } : undefined}
+                      >
+                        {item.icon}
+                      </span>
+                      {item.label}
+                    </>
+                  )}
+                </NavLink>
+              </li>
+            ))}
+          </ul>
         </div>
-      </aside>
 
-      {/* Main Content */}
+        <div className="p-2 border-t border-outline-variant">
+          <ul className="space-y-1">
+            <li>
+              <button className="w-full text-on-surface-variant hover:bg-surface-container-high rounded-lg px-4 py-3 flex items-center gap-3 text-sm font-semibold">
+                <span className="material-symbols-outlined">settings</span> Settings
+              </button>
+            </li>
+            <li>
+              <button 
+                onClick={handleLogout}
+                className="w-full text-error hover:bg-error-container/50 rounded-lg px-4 py-3 flex items-center gap-3 text-sm font-semibold transition-colors"
+              >
+                <span className="material-symbols-outlined">logout</span> Cerrar Sesión
+              </button>
+            </li>
+          </ul>
+        </div>
+      </nav>
+
+      {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Topbar */}
-        <header className="bg-white border-b border-[#E0E3E5] px-8 py-4 flex items-center justify-between sticky top-0 z-10">
-          <div className="flex items-center gap-4">
+        {/* TopNavBar Admin */}
+        <header className="flex justify-between items-center px-6 w-full h-16 border-b border-outline-variant bg-surface-container-lowest z-10">
+          <div className="flex-1 flex items-center gap-4">
             <button
-              className="md:hidden text-[#191C1E] p-2 -ml-2 rounded-full hover:bg-[#F2F4F6]"
+              className="lg:hidden text-on-surface-variant p-2 -ml-2 rounded-full hover:bg-surface-container"
               onClick={toggleSidebar}
             >
               <Menu className="w-5 h-5" />
             </button>
-            <h2 className="text-2xl text-[#191C1E] font-semibold tracking-tight hidden md:block">
-              Resumen Operativo
-            </h2>
+            <div className="relative w-full max-w-md hidden md:block">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+              <input 
+                className="w-full pl-10 pr-4 py-2 bg-surface border border-outline-variant rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all" 
+                placeholder="Buscar orden, cliente..." 
+                type="text"
+              />
+            </div>
           </div>
-          <div className="flex items-center gap-4">
-            <button className="p-2 text-[#434655] hover:bg-[#F2F4F6] rounded-full transition-colors relative">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1.5 right-2 w-2 h-2 bg-[#DC2626] rounded-full border-2 border-white"></span>
+          <div className="flex items-center gap-2">
+            <button className="p-2 text-on-surface-variant hover:bg-surface-container rounded-full transition-all duration-200">
+              <span className="material-symbols-outlined">notifications</span>
             </button>
-            <div className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
-              <div className="w-8 h-8 rounded-full bg-[#2563EB] text-white flex items-center justify-center text-sm font-bold tracking-wider">
-                {user ? getInitials(user.fullName) : 'AD'}
-              </div>
-              <div className="hidden md:flex flex-col">
-                <span className="text-sm font-medium text-[#191C1E] leading-none">
-                  {user?.fullName || 'Admin User'}
-                </span>
-                <span className="text-[11px] text-[#434655] capitalize mt-1">
-                  {user?.role || 'Administrador'}
-                </span>
-              </div>
+            <button className="p-2 text-on-surface-variant hover:bg-surface-container rounded-full transition-all duration-200">
+              <span className="material-symbols-outlined">help</span>
+            </button>
+            <div className="h-8 w-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center text-sm font-semibold ml-4 cursor-pointer border border-primary/20">
+              {user ? getInitials(user.fullName) : 'AD'}
             </div>
           </div>
         </header>
 
-        {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-6 bg-[#F7F9FB]">
-          <div className="max-w-[1440px] mx-auto">
+        {/* Main Workspace */}
+        <main className="flex-1 overflow-y-auto bg-background p-6 lg:p-8">
+          <div className="max-w-[1280px] mx-auto space-y-8">
             <Outlet />
           </div>
         </main>
