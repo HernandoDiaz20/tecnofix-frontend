@@ -1,10 +1,10 @@
-import { Link } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { Menu, X, Wrench, Calendar } from 'lucide-react';
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
 
 export const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const location = useLocation();
 
   const navLinks = [
     { name: 'Inicio', path: '/' },
@@ -13,62 +13,100 @@ export const Header = () => {
     { name: 'Seguimiento', path: '/seguimiento' },
   ];
 
+  const isActive = (path: string) => {
+    if (path === '/' && location.pathname === '/') return true;
+    if (path !== '/' && location.pathname.startsWith(path)) return true;
+    return false;
+  };
+
   return (
-    <header className="bg-brand-navy text-white sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          <div className="flex-shrink-0 flex items-center">
-            <Link to="/" className="text-2xl font-bold text-white tracking-tighter">
-              Tecno<span className="text-brand-cyan">Fix</span>
-            </Link>
-          </div>
-          
-          <nav className="hidden md:flex space-x-8">
-            {navLinks.map((link) => (
-              <Link
-                key={link.name}
-                to={link.path}
-                className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors"
-              >
-                {link.name}
-              </Link>
-            ))}
+    <header className="bg-white sticky top-0 z-50 shadow-sm border-b border-[#E0E3E5]">
+      <div className="max-w-container-max mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-18 py-3">
+          {/* Logo */}
+          <Link to="/" className="flex items-center gap-2.5 group">
+            <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+              <Wrench className="w-5 h-5" />
+            </div>
+            <span className="text-2xl font-bold tracking-tight text-[#191C1E]">
+              Tecno<span className="text-primary">Fix</span>
+            </span>
+          </Link>
+
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center gap-8">
+            {navLinks.map((link) => {
+              const active = isActive(link.path);
+              return (
+                <Link
+                  key={link.name}
+                  to={link.path}
+                  className={`text-sm font-medium transition-all py-1.5 ${
+                    active
+                      ? 'text-primary font-bold border-b-2 border-primary'
+                      : 'text-[#434655] hover:text-primary'
+                  }`}
+                >
+                  {link.name}
+                </Link>
+              );
+            })}
           </nav>
 
-          <div className="hidden md:flex items-center space-x-4">
-            <Button asChild variant="default" className="bg-brand-blue hover:bg-brand-blue/90 text-white">
-              <Link to="/agendar">Agendar Cita</Link>
-            </Button>
+          {/* Desktop Actions */}
+          <div className="hidden md:flex items-center gap-3">
+            <Link
+              to="/agendar"
+              className="inline-flex items-center gap-2 bg-primary hover:bg-[#003EA8] text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm hover:shadow transition-all duration-200"
+            >
+              <Calendar className="w-4 h-4" />
+              Agendar Servicio
+            </Link>
           </div>
 
+          {/* Mobile Menu Button */}
           <div className="md:hidden flex items-center">
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="text-gray-300 hover:text-white p-2"
+              className="p-2 rounded-xl text-[#434655] hover:text-[#191C1E] hover:bg-[#F2F4F6] transition-colors"
+              aria-label="Abrir menú"
             >
-              {isOpen ? <X size={24} /> : <Menu size={24} />}
+              {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
         </div>
       </div>
 
+      {/* Mobile Menu Dropdown */}
       {isOpen && (
-        <div className="md:hidden bg-brand-navy border-t border-gray-700">
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-            {navLinks.map((link) => (
+        <div className="md:hidden bg-white border-t border-[#E0E3E5] shadow-lg animate-in slide-in-from-top-2 duration-200">
+          <div className="px-4 pt-3 pb-5 space-y-2">
+            {navLinks.map((link) => {
+              const active = isActive(link.path);
+              return (
+                <Link
+                  key={link.name}
+                  to={link.path}
+                  onClick={() => setIsOpen(false)}
+                  className={`block px-3 py-2.5 rounded-xl text-base font-medium transition-colors ${
+                    active
+                      ? 'bg-primary/10 text-primary font-bold'
+                      : 'text-[#434655] hover:bg-[#F2F4F6] hover:text-[#191C1E]'
+                  }`}
+                >
+                  {link.name}
+                </Link>
+              );
+            })}
+            <div className="pt-2">
               <Link
-                key={link.name}
-                to={link.path}
+                to="/agendar"
                 onClick={() => setIsOpen(false)}
-                className="block text-gray-300 hover:text-white px-3 py-2 rounded-md text-base font-medium"
+                className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-[#003EA8] text-white text-base font-semibold py-3 rounded-xl shadow-sm"
               >
-                {link.name}
+                <Calendar className="w-5 h-5" />
+                Agendar Servicio
               </Link>
-            ))}
-            <div className="px-3 py-2">
-              <Button asChild className="w-full bg-brand-blue hover:bg-brand-blue/90 text-white">
-                <Link to="/agendar" onClick={() => setIsOpen(false)}>Agendar Cita</Link>
-              </Button>
             </div>
           </div>
         </div>

@@ -1,6 +1,6 @@
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiClient } from './client';
-import { Product, Service, WorkOrder, Appointment } from '@/types';
+import type { Product, Service, WorkOrder, Appointment } from '@/types';
 
 // Products
 export const useProducts = (page = 1, pageSize = 20) => {

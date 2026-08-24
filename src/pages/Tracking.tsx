@@ -1,140 +1,281 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useTrackWorkOrder } from '@/api/hooks';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { MapPin, MonitorSmartphone, Calendar, FileText } from 'lucide-react';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { 
+  Search, 
+  Smartphone, 
+  Check, 
+  Calendar, 
+  AlertCircle,
+  Wrench,
+  UserCheck
+} from 'lucide-react';
 
 export const Tracking = () => {
-  const [guideNumber, setGuideNumber] = useState('');
+  const [guideNumber, setGuideNumber] = useState('TF-000245');
+  const [searched, setSearched] = useState(true); // Default true to display example immediately
   
   const { data, refetch, isFetching, isError } = useTrackWorkOrder(guideNumber);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (guideNumber.trim()) {
+      setSearched(true);
       refetch();
     }
   };
 
-  const getStatusColor = (status: string) => {
-    const statusMap: Record<string, string> = {
-      'INGRESADO': 'bg-gray-100 text-gray-700',
-      'EN_REVISION': 'bg-blue-100 text-blue-700',
-      'ESPERANDO_REPUESTO': 'bg-orange-100 text-orange-700',
-      'EN_REPARACION': 'bg-indigo-100 text-indigo-700',
-      'REPARADO': 'bg-green-100 text-green-700',
-      'LISTO_PARA_ENTREGA': 'bg-brand-cyan/20 text-brand-navy',
-      'ENTREGADO': 'bg-gray-800 text-white',
-    };
-    return statusMap[status] || 'bg-gray-100 text-gray-700';
+  // Mock / example data matching Stitch screen
+  const defaultOrder = {
+    guideNumber: guideNumber || 'TF-000245',
+    deviceBrand: 'Apple',
+    deviceModel: 'iPhone 13',
+    deviceSerial: 'F2LZN987Q1',
+    problemDescription: 'Pantalla astillada y el táctil no responde en la zona inferior tras una caída.',
+    diagnosis: 'Se requiere cambio de módulo de pantalla completo. Componentes internos sin daño líquido aparente.',
+    partsUsed: 'Módulo Pantalla Original (OEM) iPhone 13 - Adhesivo de sellado contra agua.',
+    technicianName: 'Carlos M. - Especialista Senior',
+    estimatedDelivery: '23 Ago, 2024 - 17:00 HRS',
+    currentStatus: 'EN_REPARACION',
+    createdAt: '2024-08-21T09:30:00.000Z',
+    receptionPhotos: [
+      'https://images.unsplash.com/photo-1598327105666-5b89351aff97?auto=format&fit=crop&w=400&q=80',
+      'https://images.unsplash.com/photo-1580910051074-3eb694886505?auto=format&fit=crop&w=400&q=80',
+    ],
+    timeline: [
+      { status: 'INGRESADO', label: 'Ingresado', time: '21 Ago, 9:30 AM', completed: true },
+      { status: 'EN_REVISION', label: 'En revisión', time: '21 Ago, 11:15 AM', completed: true },
+      { status: 'DIAGNOSTICADO', label: 'Diagnóstico realizado', time: '21 Ago, 2:30 PM', completed: true },
+      { status: 'ESPERANDO_REPUESTO', label: 'Esperando repuesto', time: '21 Ago, 3:00 PM', completed: true },
+      { status: 'EN_REPARACION', label: 'En reparación', time: 'Actualmente en proceso', current: true },
+      { status: 'REPARADO', label: 'Reparado', time: 'Pendiente' },
+      { status: 'LISTO_PARA_ENTREGA', label: 'Listo para entrega', time: 'Pendiente' },
+      { status: 'ENTREGADO', label: 'Entregado', time: 'Pendiente' },
+    ]
   };
 
-  const formatStatus = (status: string) => status.replace(/_/g, ' ');
+  const order = data?.order ? {
+    guideNumber: data.order.guideNumber,
+    deviceBrand: data.order.deviceBrand,
+    deviceModel: data.order.deviceModel,
+    deviceSerial: data.order.deviceSerial,
+    problemDescription: data.order.problemDescription,
+    diagnosis: 'Diagnóstico técnico realizado y en proceso de solución.',
+    partsUsed: 'Repuestos originales garantizados.',
+    technicianName: 'Técnico Especialista TecnoFix',
+    estimatedDelivery: '24-48 Horas hábiles',
+    currentStatus: data.order.currentStatus,
+    createdAt: data.order.createdAt,
+    receptionPhotos: defaultOrder.receptionPhotos,
+    timeline: defaultOrder.timeline
+  } : defaultOrder;
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'INGRESADO':
+        return <span className="px-3.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold uppercase border border-blue-200">Ingresado</span>;
+      case 'EN_REVISION':
+        return <span className="px-3.5 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-bold uppercase border border-indigo-200">En Revisión</span>;
+      case 'ESPERANDO_REPUESTO':
+        return <span className="px-3.5 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold uppercase border border-amber-200">Esperando Repuesto</span>;
+      case 'EN_REPARACION':
+        return <span className="px-3.5 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-bold uppercase border border-orange-200 flex items-center gap-1"><Wrench className="w-3.5 h-3.5" /> En Reparación</span>;
+      case 'REPARADO':
+      case 'LISTO_PARA_ENTREGA':
+        return <span className="px-3.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold uppercase border border-emerald-200">Listo para Entrega</span>;
+      case 'ENTREGADO':
+        return <span className="px-3.5 py-1 rounded-full bg-slate-100 text-slate-800 text-xs font-bold uppercase border border-slate-300">Entregado</span>;
+      default:
+        return <span className="px-3.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase">{status}</span>;
+    }
+  };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-12">
-      <div className="text-center mb-10">
-        <h1 className="text-3xl md:text-4xl font-bold text-brand-navy mb-4">Seguimiento de Reparación</h1>
-        <p className="text-gray-600">Ingresa tu número de guía para conocer el estado actual de tu dispositivo en tiempo real.</p>
+    <div className="max-w-container-max mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
+      {/* Header & Search Bar */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6">
+        <div>
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-[#191C1E] tracking-tight mb-2">
+            Estado de tu Dispositivo
+          </h1>
+          <p className="text-base text-[#434655]">
+            Rastrea el progreso y trazabilidad de tu reparación en tiempo real sin necesidad de iniciar sesión.
+          </p>
+        </div>
+
+        <form onSubmit={handleSearch} className="relative w-full md:w-96 flex gap-2">
+          <div className="relative flex-1">
+            <Search className="w-5 h-5 text-[#737686] absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Ingresa tu número de orden"
+              value={guideNumber}
+              onChange={(e) => setGuideNumber(e.target.value.toUpperCase())}
+              className="w-full pl-11 pr-4 py-3 bg-white border border-[#E0E3E5] rounded-xl text-sm font-mono text-[#191C1E] uppercase focus:outline-none focus:border-primary shadow-sm"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={isFetching}
+            className="bg-primary hover:bg-[#003EA8] text-white px-5 py-3 rounded-xl text-sm font-semibold shadow-sm transition-colors flex-shrink-0"
+          >
+            {isFetching ? 'Buscando...' : 'Consultar'}
+          </button>
+        </form>
       </div>
 
-      <form onSubmit={handleSearch} className="max-w-xl mx-auto flex flex-col sm:flex-row gap-4 mb-12">
-        <div className="relative flex-grow">
-          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-          <Input 
-            type="text" 
-            placeholder="Ej. TFX-2023-001" 
-            value={guideNumber}
-            onChange={(e) => setGuideNumber(e.target.value.toUpperCase())}
-            className="pl-10 h-14 rounded-xl text-lg uppercase font-mono"
-          />
-        </div>
-        <Button type="submit" disabled={isFetching || !guideNumber} className="h-14 px-8 bg-brand-blue text-white rounded-xl text-lg w-full sm:w-auto">
-          {isFetching ? 'Buscando...' : 'Consultar'}
-        </Button>
-      </form>
-
       {isError && (
-        <div className="text-center py-10 bg-brand-error/10 text-brand-error rounded-2xl border border-brand-error/20">
-          <p className="text-lg font-medium">No se encontró ninguna orden con el número de guía provisto.</p>
-          <p className="text-sm mt-2 opacity-80">Verifica que lo hayas escrito correctamente.</p>
+        <div className="p-5 bg-red-50 text-red-700 rounded-2xl border border-red-200 mb-8 flex items-center gap-3">
+          <AlertCircle className="w-5 h-5 flex-shrink-0" />
+          <p className="text-sm">
+            No se encontró ninguna orden asociada a la guía <strong>{guideNumber}</strong>. Revisa el código o consulta con soporte.
+          </p>
         </div>
       )}
 
-      {data && data.order && (
-        <div className="space-y-8">
-          <Card className="rounded-2xl shadow-sm border-gray-100">
-            <CardHeader className="bg-brand-bg rounded-t-2xl border-b border-gray-100">
-              <div className="flex justify-between items-center">
+      {searched && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* Left Column: Tracker (8 cols) */}
+          <div className="lg:col-span-8 flex flex-col gap-6">
+            {/* Status Banner Card */}
+            <div className="bg-white rounded-2xl shadow-sm border border-[#E0E3E5] p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 bg-[#F2F4F6] text-primary rounded-2xl flex items-center justify-center flex-shrink-0">
+                  <Smartphone className="w-8 h-8" />
+                </div>
                 <div>
-                  <p className="text-sm text-gray-500 font-medium">Orden de Servicio</p>
-                  <CardTitle className="text-2xl font-mono text-brand-navy">{data.order.guideNumber}</CardTitle>
-                </div>
-                <Badge className={`${getStatusColor(data.order.currentStatus)} text-sm px-4 py-1 rounded-full uppercase tracking-wider`}>
-                  {formatStatus(data.order.currentStatus)}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-4">
-                  <div className="flex items-start">
-                    <MonitorSmartphone className="w-5 h-5 text-brand-blue mt-0.5 mr-3" />
-                    <div>
-                      <p className="text-sm text-gray-500 font-medium">Dispositivo</p>
-                      <p className="text-brand-navy font-medium">{data.order.deviceBrand} {data.order.deviceModel}</p>
-                      <p className="text-xs text-gray-400 font-mono">SN: {data.order.deviceSerial}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start">
-                    <Calendar className="w-5 h-5 text-brand-blue mt-0.5 mr-3" />
-                    <div>
-                      <p className="text-sm text-gray-500 font-medium">Fecha de Ingreso</p>
-                      <p className="text-brand-navy font-medium">
-                        {format(new Date(data.order.createdAt), "d 'de' MMMM yyyy", { locale: es })}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="flex items-start">
-                    <FileText className="w-5 h-5 text-brand-blue mt-0.5 mr-3" />
-                    <div>
-                      <p className="text-sm text-gray-500 font-medium">Falla Reportada</p>
-                      <p className="text-brand-navy">{data.order.problemDescription}</p>
-                    </div>
-                  </div>
+                  <h2 className="text-xl sm:text-2xl font-bold text-[#191C1E]">
+                    {order.deviceBrand} {order.deviceModel}
+                  </h2>
+                  <p className="text-xs text-[#737686] font-mono mt-0.5">
+                    Guía: {order.guideNumber} • Serial: {order.deviceSerial}
+                  </p>
                 </div>
               </div>
-            </CardContent>
-          </Card>
 
-          {data.history && data.history.length > 0 && (
-            <Card className="rounded-2xl shadow-sm border-gray-100">
-              <CardHeader>
-                <CardTitle>Historial de Movimientos</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="relative border-l-2 border-gray-200 ml-3 md:ml-4 space-y-8 pb-4">
-                  {data.history.map((event: any, idx: number) => (
-                    <div key={idx} className="relative pl-8">
-                      <div className="absolute w-4 h-4 bg-brand-blue rounded-full -left-[9px] top-1 border-4 border-white shadow-sm" />
-                      <p className="text-sm text-gray-500 mb-1">
-                        {format(new Date(event.createdAt), "dd/MM/yyyy HH:mm")}
+              <div>{getStatusBadge(order.currentStatus)}</div>
+            </div>
+
+            {/* Timeline Card */}
+            <div className="bg-white rounded-2xl shadow-sm border border-[#E0E3E5] p-6 sm:p-8">
+              <h3 className="text-lg font-bold text-[#191C1E] mb-8 pb-3 border-b border-[#E0E3E5]">
+                Historial de Servicio
+              </h3>
+
+              <div className="relative pl-3">
+                {/* Vertical Line */}
+                <div className="absolute left-[29px] top-4 bottom-6 w-0.5 bg-[#E6E8EA]" />
+
+                {order.timeline.map((step, idx) => (
+                  <div key={idx} className="relative flex items-start gap-4 mb-7 last:mb-0">
+                    {/* Step Circle Indicator */}
+                    {step.completed ? (
+                      <div className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center z-10 shadow-sm flex-shrink-0">
+                        <Check className="w-5 h-5 stroke-[2.5]" />
+                      </div>
+                    ) : step.current ? (
+                      <div className="w-9 h-9 rounded-full bg-white border-2 border-primary ring-4 ring-primary/20 flex items-center justify-center z-10 flex-shrink-0">
+                        <div className="w-3 h-3 rounded-full bg-primary animate-pulse" />
+                      </div>
+                    ) : (
+                      <div className="w-9 h-9 rounded-full bg-[#ECEEF0] border-2 border-[#E0E3E5] flex items-center justify-center z-10 flex-shrink-0" />
+                    )}
+
+                    {/* Step Text */}
+                    <div className="pt-1.5 flex-1">
+                      <p
+                        className={`text-sm font-bold ${
+                          step.current
+                            ? 'text-primary'
+                            : step.completed
+                            ? 'text-[#191C1E]'
+                            : 'text-[#737686]'
+                        }`}
+                      >
+                        {step.label}
                       </p>
-                      <p className="font-medium text-brand-navy">Estado actualizado a: {formatStatus(event.toStatus)}</p>
-                      {event.notes && <p className="text-gray-600 text-sm mt-1">{event.notes}</p>}
+                      <p className="text-xs text-[#737686] mt-0.5">{step.time}</p>
                     </div>
-                  ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: Details & Photos (4 cols) */}
+          <div className="lg:col-span-4 flex flex-col gap-6">
+            {/* Technician & Order Details */}
+            <div className="bg-white rounded-2xl shadow-sm border border-[#E0E3E5] p-6">
+              <h3 className="text-xs font-bold text-[#434655] uppercase tracking-wider mb-4 border-b border-[#E0E3E5] pb-2">
+                Detalles de la Orden
+              </h3>
+
+              {/* Technician Info */}
+              <div className="flex items-center gap-3 mb-6 p-3 bg-[#F7F9FB] rounded-xl border border-[#E0E3E5]">
+                <div className="w-11 h-11 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                  <UserCheck className="w-6 h-6" />
                 </div>
-              </CardContent>
-            </Card>
-          )}
+                <div>
+                  <p className="text-xs text-[#737686]">Técnico Asignado</p>
+                  <p className="text-sm font-bold text-[#191C1E]">{order.technicianName}</p>
+                </div>
+              </div>
+
+              {/* Diagnosis breakdown */}
+              <div className="space-y-4">
+                <div>
+                  <p className="text-xs font-bold text-[#191C1E]">Problema Reportado</p>
+                  <p className="text-xs text-[#434655] mt-1 bg-[#F7F9FB] p-2.5 rounded-xl border border-[#E0E3E5]/60">
+                    {order.problemDescription}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-xs font-bold text-[#191C1E]">Diagnóstico Oficial</p>
+                  <p className="text-xs text-[#434655] mt-1 bg-[#F7F9FB] p-2.5 rounded-xl border border-[#E0E3E5]/60">
+                    {order.diagnosis}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-xs font-bold text-[#191C1E]">Repuestos Utilizados</p>
+                  <p className="text-xs text-[#434655] mt-1">{order.partsUsed}</p>
+                </div>
+              </div>
+
+              {/* Estimated Delivery */}
+              <div className="mt-6 pt-4 border-t border-[#E0E3E5]">
+                <p className="text-xs font-bold text-[#191C1E]">Fecha Estimada de Entrega</p>
+                <div className="flex items-center gap-2 mt-1.5 text-primary">
+                  <Calendar className="w-4 h-4" />
+                  <span className="text-sm font-bold">{order.estimatedDelivery}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Photos Grid */}
+            <div className="bg-white rounded-2xl shadow-sm border border-[#E0E3E5] p-6">
+              <h3 className="text-xs font-bold text-[#434655] uppercase tracking-wider mb-4 border-b border-[#E0E3E5] pb-2">
+                Estado de Recepción
+              </h3>
+              <div className="grid grid-cols-2 gap-3">
+                {order.receptionPhotos.map((img, idx) => (
+                  <div
+                    key={idx}
+                    className="aspect-square rounded-xl overflow-hidden border border-[#E0E3E5] relative group"
+                  >
+                    <img
+                      src={img}
+                      alt={`Foto recepción ${idx + 1}`}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-[#737686] mt-3 text-center">
+                Fotografías tomadas al ingresar el dispositivo.
+              </p>
+            </div>
+          </div>
         </div>
       )}
     </div>

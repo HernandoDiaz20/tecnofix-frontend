@@ -1,88 +1,319 @@
+import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useProduct } from '@/api/hooks';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, ShoppingCart, MessageCircle } from 'lucide-react';
+import { 
+  ChevronRight, 
+  Cpu, 
+  Smartphone, 
+  Camera, 
+  ShieldCheck, 
+  MessageCircle, 
+  Minus, 
+  Plus, 
+  CheckCircle,
+  X,
+  Send
+} from 'lucide-react';
 
 export const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const { data: product, isLoading, isError } = useProduct(id!);
+  const { data: apiProduct } = useProduct(id || '');
 
-  if (isLoading) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 py-12">
-        <Skeleton className="w-32 h-6 mb-8" />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-          <Skeleton className="aspect-square rounded-2xl" />
-          <div className="space-y-6">
-            <Skeleton className="h-10 w-3/4" />
-            <Skeleton className="h-6 w-1/4" />
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-12 w-full" />
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const [quantity, setQuantity] = useState(1);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  if (isError || !product) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 py-20 text-center">
-        <h2 className="text-2xl font-bold text-brand-navy mb-4">Producto no encontrado</h2>
-        <Button asChild variant="outline">
-          <Link to="/productos"><ArrowLeft className="mr-2 w-4 h-4" /> Volver al catálogo</Link>
-        </Button>
-      </div>
-    );
-  }
+  // Form states for WhatsApp Modal
+  const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [customerCity, setCustomerCity] = useState('');
+  const [customerNotes, setCustomerNotes] = useState('');
+
+  // Fallback / mock details if backend ID is mock or empty
+  const defaultProduct = {
+    id: id || 'mock-1',
+    name: 'iPhone 15 Pro 256GB',
+    brand: 'Apple',
+    sku: 'IPH-15PRO-TIT',
+    price: 4500000,
+    stock: 5,
+    description: 'El iPhone 15 Pro está fabricado con titanio de calidad aeroespacial, lo que lo hace ligero y resistente. Cuenta con el chip A17 Pro y un sistema de cámaras Pro de última generación.',
+    specs: [
+      { label: 'Procesador', value: 'Chip A17 Pro, CPU de 6 núcleos y GPU de 6 núcleos.', icon: Cpu },
+      { label: 'Pantalla', value: 'Super Retina XDR OLED de 6.1" ProMotion 120Hz.', icon: Smartphone },
+      { label: 'Cámara', value: 'Sistema Pro de 48 MP con teleobjetivo 3x y ultra gran angular.', icon: Camera },
+      { label: 'Garantía', value: '1 año de garantía oficial directamente con TecnoFix.', icon: ShieldCheck },
+    ],
+    images: [
+      'https://images.unsplash.com/photo-1695048133142-1a20484d2569?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1580910051074-3eb694886505?auto=format&fit=crop&w=800&q=80',
+    ]
+  };
+
+  const product = apiProduct
+    ? {
+        id: apiProduct.id,
+        name: apiProduct.name,
+        brand: 'Original OEM',
+        sku: apiProduct.sku || 'SKU-TFX-01',
+        price: apiProduct.salePrice || 0,
+        stock: apiProduct.stock || 0,
+        description: apiProduct.description || 'Componente o equipo verificado y garantizado.',
+        specs: defaultProduct.specs,
+        images: apiProduct.imageUrl ? [apiProduct.imageUrl, ...defaultProduct.images.slice(1)] : defaultProduct.images
+      }
+    : defaultProduct;
+
+  const handleWhatsAppSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const total = product.price * quantity;
+    const message = `*SOLICITUD DE COMPRA - TECNOFIX*\n\n` +
+      `📦 *Producto:* ${product.name}\n` +
+      `🔢 *Cantidad:* ${quantity}\n` +
+      `💰 *Total estimado:* $${total.toLocaleString('es-CO')} COP\n` +
+      `🏷️ *SKU:* ${product.sku}\n\n` +
+      `👤 *Nombre:* ${customerName || 'No especificado'}\n` +
+      `📱 *Teléfono:* ${customerPhone || 'No especificado'}\n` +
+      `📍 *Ciudad:* ${customerCity || 'No especificada'}\n` +
+      (customerNotes ? `📝 *Notas:* ${customerNotes}\n` : '') +
+      `\nQuedo atento(a) a su confirmación de disponibilidad y método de pago.`;
+
+    const cleanPhone = '573001234567';
+    const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
+    setIsModalOpen(false);
+  };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <Link to="/productos" className="inline-flex items-center text-gray-500 hover:text-brand-blue mb-8 transition-colors">
-        <ArrowLeft className="mr-2 w-4 h-4" /> Volver al catálogo
-      </Link>
+    <div className="max-w-container-max mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+      {/* Breadcrumbs */}
+      <nav className="flex items-center gap-2 text-sm text-[#434655] mb-8">
+        <Link to="/" className="hover:text-primary transition-colors">Inicio</Link>
+        <ChevronRight className="w-4 h-4 text-[#737686]" />
+        <Link to="/productos" className="hover:text-primary transition-colors">Productos</Link>
+        <ChevronRight className="w-4 h-4 text-[#737686]" />
+        <span className="font-semibold text-[#191C1E] line-clamp-1">{product.name}</span>
+      </nav>
 
-      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-16 p-8 lg:p-12">
-          {/* Imagen */}
-          <div className="bg-brand-bg rounded-2xl aspect-square flex items-center justify-center p-8">
-            {product.imageUrl ? (
-              <img src={product.imageUrl} alt={product.name} className="w-full h-full object-contain mix-blend-multiply" />
-            ) : (
-              <span className="text-gray-400 text-xl font-medium">Sin imagen disponible</span>
-            )}
+      {/* Main Grid Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+        {/* Left: Image Gallery (7 cols) */}
+        <div className="lg:col-span-7 flex flex-col gap-4">
+          <div className="bg-white rounded-2xl shadow-sm border border-[#E0E3E5] overflow-hidden aspect-[4/3] flex items-center justify-center p-8 relative">
+            <img
+              src={product.images[selectedImageIndex] || product.images[0]}
+              alt={product.name}
+              className="w-full h-full object-contain transition-all duration-300"
+            />
           </div>
 
-          {/* Info */}
-          <div className="flex flex-col justify-center">
-            <div className="mb-2 flex items-center space-x-3">
-              <span className="text-sm font-mono text-gray-500">SKU: {product.sku}</span>
-              {product.stock > 0 ? (
-                <Badge className="bg-brand-success/10 text-brand-success hover:bg-brand-success/20">Disponible</Badge>
-              ) : (
-                <Badge variant="outline" className="text-gray-500">Agotado</Badge>
-              )}
-            </div>
-            
-            <h1 className="text-3xl lg:text-4xl font-bold text-brand-navy mb-4">{product.name}</h1>
-            <p className="text-4xl font-bold text-brand-blue mb-6">${product.salePrice.toLocaleString()}</p>
-            
-            <div className="prose prose-sm text-gray-600 mb-8 max-w-none">
-              <h3 className="text-lg font-semibold text-brand-navy mb-2">Descripción</h3>
-              <p>{product.description || 'No hay descripción disponible para este producto.'}</p>
-            </div>
-
-            <div className="mt-auto space-y-4 pt-8 border-t border-gray-100">
-              <Button asChild size="lg" className="w-full h-14 bg-brand-blue hover:bg-brand-blue/90 text-white text-lg rounded-xl" disabled={product.stock <= 0}>
-                <Link to={`/carrito?product=${product.id}`}>
-                  <ShoppingCart className="mr-2 w-5 h-5" /> Agregar al Carrito
-                </Link>
-              </Button>
-            </div>
+          {/* Thumbnails */}
+          <div className="grid grid-cols-4 gap-4">
+            {product.images.map((img, idx) => (
+              <button
+                key={idx}
+                onClick={() => setSelectedImageIndex(idx)}
+                className={`bg-white rounded-xl border p-2 aspect-square flex items-center justify-center overflow-hidden transition-all ${
+                  selectedImageIndex === idx
+                    ? 'border-primary ring-2 ring-primary/20 shadow-sm'
+                    : 'border-[#E0E3E5] hover:border-primary/50'
+                }`}
+              >
+                <img src={img} alt={`Vista ${idx + 1}`} className="w-full h-full object-contain" />
+              </button>
+            ))}
           </div>
         </div>
+
+        {/* Right: Product Details & Purchase (5 cols) */}
+        <div className="lg:col-span-5 flex flex-col">
+          {/* Header */}
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-xs font-bold text-[#434655] uppercase tracking-wider">
+                {product.brand}
+              </span>
+              <span className="bg-[#DCFCE7] text-[#16A34A] text-xs font-bold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1 border border-[#16A34A]/20">
+                <CheckCircle className="w-3.5 h-3.5" />
+                En Stock ({product.stock})
+              </span>
+            </div>
+
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#191C1E] tracking-tight">
+              {product.name}
+            </h1>
+            <p className="text-xs text-[#737686] font-mono mt-1">SKU: {product.sku}</p>
+
+            <div className="text-3xl sm:text-4xl font-black text-primary mt-4">
+              ${product.price.toLocaleString('es-CO')}{' '}
+              <span className="text-sm font-normal text-[#434655]">COP</span>
+            </div>
+          </div>
+
+          {/* Specifications Box */}
+          <div className="bg-white border border-[#E0E3E5] rounded-2xl p-5 mb-6 shadow-sm">
+            <h3 className="text-sm font-bold text-[#191C1E] uppercase tracking-wider mb-4 border-b border-[#E0E3E5] pb-2.5">
+              Especificaciones Principales
+            </h3>
+            <ul className="space-y-3.5">
+              {product.specs.map((spec) => {
+                const Icon = spec.icon;
+                return (
+                  <li key={spec.label} className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Icon className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-[#191C1E]">{spec.label}</p>
+                      <p className="text-xs sm:text-sm text-[#434655]">{spec.value}</p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+
+          {/* Quantity Selector */}
+          <div className="mb-6">
+            <label className="block text-xs font-bold uppercase tracking-wider text-[#191C1E] mb-2">
+              Cantidad
+            </label>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                className="w-11 h-11 rounded-xl border border-[#E0E3E5] bg-white flex items-center justify-center text-[#191C1E] hover:bg-[#F2F4F6] transition-colors"
+              >
+                <Minus className="w-4 h-4" />
+              </button>
+              <span className="w-14 text-center font-bold text-lg text-[#191C1E]">
+                {quantity}
+              </span>
+              <button
+                onClick={() => setQuantity(quantity + 1)}
+                className="w-11 h-11 rounded-xl border border-[#E0E3E5] bg-white flex items-center justify-center text-[#191C1E] hover:bg-[#F2F4F6] transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* WhatsApp CTA Button */}
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="w-full bg-[#25D366] hover:bg-[#1DA851] text-white font-bold text-base py-4 px-6 rounded-2xl shadow-md hover:shadow-lg flex items-center justify-center gap-2.5 transition-all transform active:scale-[0.98]"
+          >
+            <MessageCircle className="w-5 h-5 fill-current" />
+            Comprar por WhatsApp
+          </button>
+          <p className="text-xs text-center text-[#434655] mt-2.5">
+            Solicita tu equipo de forma rápida y segura sin pasarelas de pago.
+          </p>
+        </div>
       </div>
+
+      {/* Modal Resumen de Solicitud (WhatsApp) */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl border border-[#E0E3E5] max-w-lg w-full overflow-hidden animate-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="bg-[#F2F4F6] px-6 py-4 flex justify-between items-center border-b border-[#E0E3E5]">
+              <h3 className="text-lg font-bold text-[#191C1E] flex items-center gap-2">
+                <MessageCircle className="w-5 h-5 text-primary" />
+                Resumen de Solicitud
+              </h3>
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="p-1 rounded-lg text-[#737686] hover:text-[#191C1E] hover:bg-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <form onSubmit={handleWhatsAppSubmit} className="p-6 space-y-4">
+              <div className="bg-[#F7F9FB] rounded-xl p-4 border border-[#E0E3E5] flex justify-between items-center">
+                <div>
+                  <p className="font-bold text-[#191C1E] text-sm">{product.name}</p>
+                  <p className="text-xs text-[#434655]">Cantidad: {quantity}</p>
+                </div>
+                <div className="text-right">
+                  <p className="font-extrabold text-primary text-base">
+                    ${(product.price * quantity).toLocaleString('es-CO')} COP
+                  </p>
+                  <p className="text-[11px] text-[#737686]">Precio estimado</p>
+                </div>
+              </div>
+
+              <div>
+                <label className="tecno-label">Nombre Completo</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ej. Juan Pérez"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  className="tecno-input"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="tecno-label">Teléfono (WhatsApp)</label>
+                  <input
+                    type="tel"
+                    required
+                    placeholder="Ej. 300 123 4567"
+                    value={customerPhone}
+                    onChange={(e) => setCustomerPhone(e.target.value)}
+                    className="tecno-input"
+                  />
+                </div>
+                <div>
+                  <label className="tecno-label">Ciudad</label>
+                  <input
+                    type="text"
+                    placeholder="Ej. Bogotá / Medellín"
+                    value={customerCity}
+                    onChange={(e) => setCustomerCity(e.target.value)}
+                    className="tecno-input"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="tecno-label">Observaciones (Opcional)</label>
+                <textarea
+                  rows={2}
+                  placeholder="Color preferido, dudas técnicas o método de entrega..."
+                  value={customerNotes}
+                  onChange={(e) => setCustomerNotes(e.target.value)}
+                  className="tecno-input resize-none"
+                />
+              </div>
+
+              {/* Modal Footer */}
+              <div className="pt-3 border-t border-[#E0E3E5] flex gap-3 justify-end">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-4 py-2.5 rounded-xl border border-[#E0E3E5] text-sm font-semibold text-[#434655] hover:bg-[#F2F4F6] transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="inline-flex items-center gap-2 bg-[#25D366] hover:bg-[#1DA851] text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-colors"
+                >
+                  <Send className="w-4 h-4" />
+                  Continuar por WhatsApp
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

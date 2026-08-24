@@ -8,59 +8,60 @@ export default {
   theme: {
     extend: {
       colors: {
-        brand: {
-          navy: '#0F172A',
-          blue: '#2563EB',
-          cyan: '#06B6D4',
-          bg: '#F8FAFC',
-          surface: '#FFFFFF',
-          success: '#16A34A',
-          warning: '#F59E0B',
-          error: '#DC2626',
-        },
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
-        ring: "hsl(var(--ring))",
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
+        background: "#F7F9FB",
+        surface: "#FFFFFF",
+        "on-surface": "#191C1E",
+        "on-surface-variant": "#434655",
         primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
+          DEFAULT: "#004AC6",
+          hover: "#003EA8",
+          container: "#2563EB",
+          "on-container": "#FFFFFF",
+          fixed: "#DBE1FF",
+          "fixed-dim": "#B4C5FF",
+          foreground: "#FFFFFF",
         },
         secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
+          DEFAULT: "#00687A",
+          container: "#57DFFE",
+          "on-container": "#004E5C",
+          foreground: "#FFFFFF",
         },
-        destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
+        "surface-container": {
+          lowest: "#FFFFFF",
+          low: "#F2F4F6",
+          DEFAULT: "#ECEEF0",
+          high: "#E6E8EA",
+          highest: "#E0E3E5",
         },
-        muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
+        outline: {
+          DEFAULT: "#737686",
+          variant: "#E0E3E5",
         },
-        accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
+        success: {
+          DEFAULT: "#16A34A",
+          container: "#DCFCE7",
         },
-        popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
+        warning: {
+          DEFAULT: "#D97706",
+          container: "#FEF3C7",
         },
-        card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
+        error: {
+          DEFAULT: "#DC2626",
+          container: "#FFDAD6",
         },
-      },
-      borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
-        sans: ["Inter", "sans-serif"],
+        sans: ["Inter", "system-ui", "sans-serif"],
+      },
+      boxShadow: {
+        card: "0px 1px 3px rgba(15, 23, 42, 0.06), 0px 1px 2px rgba(15, 23, 42, 0.04)",
+        "card-hover": "0px 10px 25px -5px rgba(15, 23, 42, 0.08), 0px 8px 10px -6px rgba(15, 23, 42, 0.04)",
+      },
+      maxWidth: {
+        "container-max": "1280px",
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [],
 }

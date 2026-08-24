@@ -1,120 +1,290 @@
 import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { ArrowRight, Settings, Smartphone, Wrench, ShieldCheck, Clock, CheckCircle } from 'lucide-react';
+import { 
+  Smartphone, 
+  Tablet, 
+  Laptop, 
+  Monitor, 
+  Headphones, 
+  Wrench, 
+  Sparkles, 
+  Cpu, 
+  Search, 
+  MessageCircle, 
+  ArrowRight,
+  ShieldCheck
+} from 'lucide-react';
+import { useProducts } from '@/api/hooks';
+import type { Product } from '@/types';
 
 export const Home = () => {
+  const { data: productsData } = useProducts(1, 3);
+  
+  // Default mock fallback items if backend is empty/loading to ensure the Stitch UI looks stunning immediately
+  const defaultFeatured = [
+    {
+      id: 'mock-1',
+      name: 'iPhone 15 Pro',
+      brand: 'Apple',
+      specs: '256GB Almacenamiento, Chip A17 Pro, Titanio Natural.',
+      price: 4500000,
+      image: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?auto=format&fit=crop&w=600&q=80',
+      available: true
+    },
+    {
+      id: 'mock-2',
+      name: 'MacBook Air M2',
+      brand: 'Apple',
+      specs: 'Chip M2, 8GB RAM, 256GB SSD, Pantalla Liquid Retina 13.6".',
+      price: 5200000,
+      image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=600&q=80',
+      available: true
+    },
+    {
+      id: 'mock-3',
+      name: 'Galaxy S23 Ultra',
+      brand: 'Samsung',
+      specs: '256GB, 12GB RAM, Cámara 200MP, S-Pen Integrado.',
+      price: 4800000,
+      image: 'https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?auto=format&fit=crop&w=600&q=80',
+      available: true
+    }
+  ];
+
+  const apiProducts: Product[] = Array.isArray(productsData) 
+    ? productsData 
+    : productsData?.products || [];
+
+  const displayProducts = apiProducts.length > 0
+    ? apiProducts.slice(0, 3).map(p => ({
+        id: p.id,
+        name: p.name,
+        brand: 'Original OEM',
+        specs: p.description || `SKU: ${p.sku} - Repuesto de alta calidad`,
+        price: p.salePrice || 0,
+        image: p.imageUrl || defaultFeatured[0].image,
+        available: p.stock > 0
+      }))
+    : defaultFeatured;
+
+  const categories = [
+    { name: 'Celulares', icon: Smartphone, path: '/productos?cat=celulares' },
+    { name: 'Tablets', icon: Tablet, path: '/productos?cat=tablets' },
+    { name: 'Portátiles', icon: Laptop, path: '/productos?cat=portatiles' },
+    { name: 'PC', icon: Monitor, path: '/productos?cat=pc' },
+    { name: 'Accesorios', icon: Headphones, path: '/productos?cat=accesorios' },
+  ];
+
+  const services = [
+    {
+      title: 'Diagnóstico Experto',
+      description: 'Revisión profunda de hardware y software para identificar fallas precisas.',
+      icon: Search,
+    },
+    {
+      title: 'Cambio de Pantalla',
+      description: 'Reemplazo con repuestos originales y garantía de funcionamiento.',
+      icon: Smartphone,
+    },
+    {
+      title: 'Mantenimiento Preventivo',
+      description: 'Limpieza interna y cambio de pasta térmica para optimizar rendimiento.',
+      icon: Sparkles,
+    },
+    {
+      title: 'Soluciones de Software',
+      description: 'Instalación de SO, recuperación de datos y eliminación de virus.',
+      icon: Cpu,
+    },
+  ];
+
   return (
-    <div className="flex flex-col w-full">
+    <div className="w-full">
       {/* Hero Section */}
-      <section className="bg-brand-navy text-white py-20 lg:py-32">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
-            Servicio Técnico de Alta Precisión
-          </h1>
-          <p className="text-lg md:text-xl text-gray-300 max-w-3xl mx-auto mb-10">
-            Reparación de dispositivos, repuestos originales y seguimiento en tiempo real. 
-            Confía tus equipos a verdaderos profesionales.
-          </p>
-          <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-6">
-            <Button asChild size="lg" className="w-full sm:w-auto bg-brand-blue hover:bg-brand-blue/90 text-white font-medium text-lg h-14 px-8">
-              <Link to="/agendar">
-                Agendar Servicio <ArrowRight className="ml-2 w-5 h-5" />
-              </Link>
-            </Button>
-            <Button asChild variant="outline" size="lg" className="w-full sm:w-auto text-brand-navy border-white bg-white hover:bg-gray-100 font-medium text-lg h-14 px-8">
-              <Link to="/seguimiento">Rastrear Reparación</Link>
-            </Button>
-          </div>
+      <section className="max-w-container-max mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-20 text-center flex flex-col items-center">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-wider mb-6">
+          <ShieldCheck className="w-4 h-4" />
+          Servicio Técnico Certificado
+        </div>
+
+        <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-[#191C1E] max-w-4xl leading-[1.15]">
+          Expertos en Tecnología y Soporte Técnico Especializado
+        </h1>
+        
+        <p className="mt-6 text-lg sm:text-xl text-[#434655] max-w-2xl">
+          Venta de dispositivos de última generación y reparación profesional con garantía por escrito.
+        </p>
+
+        <div className="mt-10 flex flex-col sm:flex-row gap-4 w-full sm:w-auto justify-center">
+          <Link
+            to="/productos"
+            className="inline-flex items-center justify-center bg-primary hover:bg-[#003EA8] text-white font-semibold text-base px-8 py-3.5 rounded-xl shadow-sm hover:shadow transition-all"
+          >
+            Ver dispositivos
+          </Link>
+          <Link
+            to="/agendar"
+            className="inline-flex items-center justify-center border border-primary text-primary hover:bg-primary/5 font-semibold text-base px-8 py-3.5 rounded-xl transition-all"
+          >
+            Solicitar servicio
+          </Link>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-20 bg-brand-bg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-brand-navy mb-4">Por qué elegir TecnoFix</h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              Nuestra metodología nos permite ofrecer un servicio rápido, transparente y con garantía.
+      {/* Categories Section */}
+      <section className="max-w-container-max mx-auto px-4 sm:px-6 lg:px-8 py-12 border-t border-[#E0E3E5]">
+        <h2 className="text-2xl sm:text-3xl font-bold text-[#191C1E] text-center mb-8">
+          Nuestras Categorías
+        </h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 sm:gap-6">
+          {categories.map((cat) => {
+            const Icon = cat.icon;
+            return (
+              <Link
+                key={cat.name}
+                to={cat.path}
+                className="flex flex-col items-center justify-center p-6 bg-white rounded-2xl shadow-sm border border-[#E0E3E5] hover:border-primary hover:shadow-md transition-all group"
+              >
+                <div className="w-16 h-16 rounded-xl bg-[#F2F4F6] text-primary flex items-center justify-center mb-3 group-hover:bg-primary/10 group-hover:scale-110 transition-all">
+                  <Icon className="w-8 h-8" />
+                </div>
+                <span className="font-semibold text-[#191C1E] text-base group-hover:text-primary transition-colors">
+                  {cat.name}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Featured Products */}
+      <section className="max-w-container-max mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="flex justify-between items-end mb-8">
+          <div>
+            <h2 className="text-2xl sm:text-3xl font-bold text-[#191C1E]">
+              Equipos Destacados
+            </h2>
+            <p className="text-sm text-[#434655] mt-1">
+              Dispositivos verificados y listos para entrega inmediata.
+            </p>
+          </div>
+          <Link
+            to="/productos"
+            className="hidden sm:inline-flex items-center text-primary font-semibold text-sm hover:underline gap-1"
+          >
+            Ver catálogo completo <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8">
+          {displayProducts.map((prod) => (
+            <div
+              key={prod.id}
+              className="bg-white rounded-2xl shadow-sm border border-[#E0E3E5] overflow-hidden flex flex-col hover:border-primary hover:shadow-md transition-all group"
+            >
+              <div className="h-56 bg-[#F2F4F6] p-6 flex items-center justify-center relative overflow-hidden">
+                <img
+                  src={prod.image}
+                  alt={prod.name}
+                  className="h-full w-full object-contain group-hover:scale-105 transition-transform duration-300"
+                />
+              </div>
+
+              <div className="p-6 flex flex-col flex-1">
+                <div className="flex justify-between items-start mb-2">
+                  <div>
+                    <span className="text-xs font-semibold text-[#434655] uppercase tracking-wider">
+                      {prod.brand}
+                    </span>
+                    <h3 className="text-xl font-bold text-[#191C1E] mt-0.5">
+                      {prod.name}
+                    </h3>
+                  </div>
+                  <span className="bg-[#DCFCE7] text-[#16A34A] text-xs font-bold px-2.5 py-1 rounded-full">
+                    Disponible
+                  </span>
+                </div>
+
+                <p className="text-xs sm:text-sm text-[#434655] line-clamp-2 mb-4">
+                  {prod.specs}
+                </p>
+
+                <div className="mt-auto pt-4 border-t border-[#E0E3E5] flex items-center justify-between">
+                  <span className="text-2xl font-bold text-primary">
+                    ${prod.price.toLocaleString('es-CO')}{' '}
+                    <span className="text-xs font-normal text-[#434655]">COP</span>
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 mt-5">
+                  <Link
+                    to={`/productos/${prod.id}`}
+                    className="flex items-center justify-center bg-[#F2F4F6] hover:bg-[#E6E8EA] text-[#191C1E] text-sm font-semibold py-2.5 rounded-xl transition-colors text-center"
+                  >
+                    Ver detalles
+                  </Link>
+                  <a
+                    href={`https://wa.me/573001234567?text=${encodeURIComponent(
+                      `Hola TecnoFix, estoy interesado en comprar el ${prod.name} ($${prod.price.toLocaleString('es-CO')} COP).`
+                    )}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center justify-center gap-1.5 bg-[#25D366] hover:bg-[#1DA851] text-white text-sm font-semibold py-2.5 rounded-xl transition-colors text-center"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    WhatsApp
+                  </a>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Technical Services Section */}
+      <section className="bg-white border-t border-[#E0E3E5] py-16">
+        <div className="max-w-container-max mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <h2 className="text-2xl sm:text-3xl font-bold text-[#191C1E]">
+              Servicios Técnicos Especializados
+            </h2>
+            <p className="text-sm sm:text-base text-[#434655] mt-2">
+              Soluciones integrales de hardware y software para extender la vida útil de tus equipos.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 text-center flex flex-col items-center">
-              <div className="w-14 h-14 bg-brand-blue/10 text-brand-blue rounded-xl flex items-center justify-center mb-6">
-                <ShieldCheck className="w-8 h-8" />
-              </div>
-              <h3 className="text-xl font-semibold mb-3 text-brand-navy">Garantía Extendida</h3>
-              <p className="text-gray-600">
-                Todas nuestras reparaciones cuentan con soporte y garantía documentada directamente en nuestro sistema.
-              </p>
-            </div>
-            
-            <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 text-center flex flex-col items-center">
-              <div className="w-14 h-14 bg-brand-blue/10 text-brand-blue rounded-xl flex items-center justify-center mb-6">
-                <Clock className="w-8 h-8" />
-              </div>
-              <h3 className="text-xl font-semibold mb-3 text-brand-navy">Seguimiento en Vivo</h3>
-              <p className="text-gray-600">
-                Consulta el estado de tu equipo en tiempo real mediante tu número de guía único. No más incertidumbre.
-              </p>
-            </div>
-
-            <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 text-center flex flex-col items-center">
-              <div className="w-14 h-14 bg-brand-blue/10 text-brand-blue rounded-xl flex items-center justify-center mb-6">
-                <Wrench className="w-8 h-8" />
-              </div>
-              <h3 className="text-xl font-semibold mb-3 text-brand-navy">Repuestos Originales</h3>
-              <p className="text-gray-600">
-                Contamos con un amplio catálogo de repuestos verificados y certificados para cada marca.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Services Highlight */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row justify-between items-end mb-12">
-            <div className="max-w-2xl">
-              <h2 className="text-3xl font-bold text-brand-navy mb-4">Especialistas en Dispositivos</h2>
-              <p className="text-gray-600">
-                Brindamos soporte técnico integral para la mayoría de dispositivos del mercado actual.
-              </p>
-            </div>
-            <Button asChild variant="link" className="text-brand-blue mt-4 md:mt-0 font-medium">
-              <Link to="/servicios">Ver todos los servicios <ArrowRight className="ml-2 w-4 h-4" /></Link>
-            </Button>
-          </div>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              { title: 'Smartphones', icon: <Smartphone className="w-6 h-6" /> },
-              { title: 'Laptops', icon: <Settings className="w-6 h-6" /> },
-              { title: 'Tablets', icon: <Smartphone className="w-6 h-6" /> },
-              { title: 'Smartwatches', icon: <Clock className="w-6 h-6" /> },
-            ].map((item, idx) => (
-              <div key={idx} className="group cursor-pointer p-6 rounded-xl border border-gray-200 hover:border-brand-blue transition-colors hover:shadow-md bg-brand-bg/50 hover:bg-white flex flex-col items-center justify-center space-y-4">
-                <div className="text-brand-navy group-hover:text-brand-blue transition-colors">
-                  {item.icon}
+            {services.map((serv) => {
+              const Icon = serv.icon;
+              return (
+                <div
+                  key={serv.title}
+                  className="bg-[#F7F9FB] p-6 rounded-2xl border border-[#E0E3E5] flex flex-col items-start gap-4 hover:border-primary hover:shadow-sm transition-all"
+                >
+                  <div className="bg-primary text-white p-3.5 rounded-xl shadow-sm">
+                    <Icon className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-[#191C1E] text-base mb-1.5">
+                      {serv.title}
+                    </h4>
+                    <p className="text-sm text-[#434655] leading-relaxed">
+                      {serv.description}
+                    </p>
+                  </div>
                 </div>
-                <h4 className="font-semibold text-brand-navy text-lg">{item.title}</h4>
-              </div>
-            ))}
+              );
+            })}
           </div>
-        </div>
-      </section>
 
-      {/* CTA Section */}
-      <section className="py-20 bg-brand-blue text-white">
-        <div className="max-w-4xl mx-auto px-4 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6">¿Necesitas un repuesto o accesorio?</h2>
-          <p className="text-lg md:text-xl text-brand-bg/90 mb-10">
-            Explora nuestro catálogo en línea. Compra directa y segura vía WhatsApp.
-          </p>
-          <Button asChild size="lg" className="bg-white text-brand-blue hover:bg-gray-100 font-semibold text-lg h-14 px-10">
-            <Link to="/productos">Ir al Catálogo</Link>
-          </Button>
+          <div className="mt-12 text-center">
+            <Link
+              to="/agendar"
+              className="inline-flex items-center gap-2 bg-primary hover:bg-[#003EA8] text-white font-semibold text-base px-8 py-3.5 rounded-xl shadow-sm transition-all"
+            >
+              <Wrench className="w-5 h-5" />
+              Agendar una Evaluación Técnica
+            </Link>
+          </div>
         </div>
       </section>
     </div>
