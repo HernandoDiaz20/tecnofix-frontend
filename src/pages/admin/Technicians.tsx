@@ -1,0 +1,26 @@
+import React from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { HardHat } from 'lucide-react';
+
+export const Technicians: React.FC = () => {
+  return (
+    <div className="flex flex-col gap-6">
+      <div>
+        <h1 className="text-2xl font-bold text-[#191C1E] tracking-tight">Técnicos</h1>
+        <p className="text-[#434655]">Directorio y gestión del personal técnico.</p>
+      </div>
+      
+      <Card className="border-[#E0E3E5] shadow-sm bg-white">
+        <CardContent className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="w-16 h-16 rounded-full bg-[#E6E8EA] flex items-center justify-center mb-4">
+            <HardHat className="w-8 h-8 text-[#434655]" />
+          </div>
+          <h2 className="text-xl font-semibold text-[#191C1E] mb-2">Módulo en Desarrollo</h2>
+          <p className="text-[#434655] max-w-md">
+            Esta sección se implementará posteriormente como feature independiente.
+          </p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
