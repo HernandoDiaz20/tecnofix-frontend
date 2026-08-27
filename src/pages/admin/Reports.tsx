@@ -9,7 +9,7 @@ export const Reports: React.FC = () => {
         <h1 className="text-2xl font-bold text-[#191C1E] tracking-tight">Reportes</h1>
         <p className="text-[#434655]">Generación de informes de ventas y reparaciones.</p>
       </div>
-      
+
       <Card className="border-[#E0E3E5] shadow-sm bg-white">
         <CardContent className="flex flex-col items-center justify-center py-20 text-center">
           <div className="w-16 h-16 rounded-full bg-[#E6E8EA] flex items-center justify-center mb-4">

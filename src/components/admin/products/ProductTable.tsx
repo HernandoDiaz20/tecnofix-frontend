@@ -1,8 +1,8 @@
 import React from 'react';
 import { ProductStatusBadge } from './ProductStatusBadge';
-import { 
-  Edit, 
-  Trash2, 
+import {
+  Edit,
+  Trash2,
   CheckCircle,
   Eye,
   Activity,
@@ -81,13 +81,11 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                 const isOutOfStock = product.stock === 0;
 
                 return (
-                  <tr 
-                    key={product.id} 
-                    className={`hover:bg-surface-container-lowest transition-colors group ${
-                      !product.active ? 'opacity-60 bg-surface-container-low/50' : ''
-                    } ${
-                      isLowStock ? 'bg-error-container/10' : ''
-                    }`}
+                  <tr
+                    key={product.id}
+                    className={`hover:bg-surface-container-lowest transition-colors group ${!product.active ? 'opacity-60 bg-surface-container-low/50' : ''
+                      } ${isLowStock ? 'bg-error-container/10' : ''
+                      }`}
                   >
                     <td className="py-2 px-4 text-center align-middle">
                       <div className="w-10 h-10 rounded bg-surface-container-highest border border-outline-variant flex items-center justify-center overflow-hidden shrink-0 mx-auto">
@@ -113,9 +111,8 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                       <ProductStatusBadge active={product.active} />
                     </td>
                     <td className="py-3 px-4 text-center">
-                      <span className={`font-data-mono text-data-mono font-semibold ${
-                        isOutOfStock ? 'text-error line-through' : isLowStock ? 'text-error' : 'text-on-surface'
-                      }`}>
+                      <span className={`font-data-mono text-data-mono font-semibold ${isOutOfStock ? 'text-error line-through' : isLowStock ? 'text-error' : 'text-on-surface'
+                        }`}>
                         {product.stock}
                       </span>
                       {isOutOfStock && <span className="block text-[10px] text-error font-medium">Agotado</span>}
@@ -128,34 +125,33 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                     </td>
                     <td className="py-3 px-4 text-center">
                       <div className="flex justify-center items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button 
+                        <button
                           onClick={() => onView(product)}
-                          className="p-1.5 text-on-surface-variant hover:text-primary hover:bg-primary/10 rounded transition-colors" 
+                          className="p-1.5 text-on-surface-variant hover:text-primary hover:bg-primary/10 rounded transition-colors"
                           title="Ver Detalle"
                         >
                           <Eye className="w-[18px] h-[18px]" />
                         </button>
-                        <button 
+                        <button
                           onClick={() => onShowMovements(product)}
-                          className="p-1.5 text-on-surface-variant hover:text-primary hover:bg-primary/10 rounded transition-colors" 
+                          className="p-1.5 text-on-surface-variant hover:text-primary hover:bg-primary/10 rounded transition-colors"
                           title="Movimientos"
                         >
                           <Activity className="w-[18px] h-[18px]" />
                         </button>
-                        <button 
+                        <button
                           onClick={() => onEdit(product)}
-                          className="p-1.5 text-on-surface-variant hover:text-primary hover:bg-primary/10 rounded transition-colors" 
+                          className="p-1.5 text-on-surface-variant hover:text-primary hover:bg-primary/10 rounded transition-colors"
                           title="Editar"
                         >
                           <Edit className="w-[18px] h-[18px]" />
                         </button>
-                        <button 
+                        <button
                           onClick={() => onToggleStatus(product)}
-                          className={`p-1.5 rounded transition-colors ${
-                            product.active 
-                              ? 'text-on-surface-variant hover:text-error hover:bg-error/10' 
+                          className={`p-1.5 rounded transition-colors ${product.active
+                              ? 'text-on-surface-variant hover:text-error hover:bg-error/10'
                               : 'text-on-surface-variant hover:text-success hover:bg-success-container/50'
-                          }`}
+                            }`}
                           title={product.active ? 'Desactivar' : 'Activar'}
                         >
                           {product.active ? <Trash2 className="w-[18px] h-[18px]" /> : <CheckCircle className="w-[18px] h-[18px]" />}
