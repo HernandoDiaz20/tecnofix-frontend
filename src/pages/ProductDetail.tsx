@@ -34,6 +34,7 @@ export const ProductDetail = () => {
     id: id || 'mock-1',
     name: 'iPhone 15 Pro 256GB',
     brand: 'Apple',
+    color: undefined as string | undefined,
     sku: 'IPH-15PRO-TIT',
     price: 4500000,
     stock: 5,
@@ -56,12 +57,13 @@ export const ProductDetail = () => {
     ? {
         id: apiProduct.id,
         name: apiProduct.name,
-        brand: 'Original OEM',
+        brand: apiProduct.brand || 'Original OEM',
+        color: apiProduct.color,
         sku: apiProduct.sku || 'SKU-TFX-01',
         price: apiProduct.salePrice || 0,
         stock: apiProduct.stock || 0,
         description: apiProduct.description || 'Componente o equipo verificado y garantizado.',
-        specs: defaultProduct.specs,
+        specs: apiProduct.specs && Array.isArray(apiProduct.specs) && apiProduct.specs.length > 0 ? apiProduct.specs : defaultProduct.specs,
         images: apiProduct.imageUrl ? [apiProduct.imageUrl, ...defaultProduct.images.slice(1)] : defaultProduct.images
       }
     : defaultProduct;
@@ -131,10 +133,15 @@ export const ProductDetail = () => {
         <div className="lg:col-span-5 flex flex-col">
           {/* Header */}
           <div className="mb-6">
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex flex-wrap items-center gap-2 mb-2">
               <span className="text-xs font-bold text-[#434655] uppercase tracking-wider">
                 {product.brand}
               </span>
+              {product.color && (
+                <span className="bg-[#F2F4F6] text-[#434655] text-xs font-bold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1 border border-[#E0E3E5]">
+                  Color: {product.color}
+                </span>
+              )}
               <span className="bg-[#DCFCE7] text-[#16A34A] text-xs font-bold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1 border border-[#16A34A]/20">
                 <CheckCircle className="w-3.5 h-3.5" />
                 En Stock ({product.stock})
@@ -158,10 +165,10 @@ export const ProductDetail = () => {
               Especificaciones Principales
             </h3>
             <ul className="space-y-3.5">
-              {product.specs.map((spec) => {
-                const Icon = spec.icon;
+              {product.specs.map((spec: any, index: number) => {
+                const Icon = spec.icon || CheckCircle;
                 return (
-                  <li key={spec.label} className="flex items-start gap-3">
+                  <li key={index} className="flex items-start gap-3">
                     <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center flex-shrink-0 mt-0.5">
                       <Icon className="w-4 h-4" />
                     </div>

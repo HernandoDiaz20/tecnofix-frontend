@@ -15,7 +15,7 @@ export const Catalog = () => {
     id: p.id,
     sku: p.sku || 'SKU-GEN',
     name: p.name,
-    brand: 'TecnoFix',
+    brand: p.brand || 'TecnoFix',
     description: p.description || '',
     salePrice: p.salePrice || 0,
     stock: p.stock || 0,
