@@ -99,6 +99,11 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                     <td className="py-3 px-4">
                       <p className={`font-body-md text-body-md font-medium text-on-surface flex items-center gap-2 ${!product.active ? 'line-through' : ''}`}>
                         {product.name}
+                        {product.brand && product.brand !== 'Genérico' && (
+                          <span className="bg-surface-container-highest text-on-surface-variant text-[10px] px-1.5 py-0.5 rounded uppercase tracking-wider font-semibold">
+                            {product.brand}
+                          </span>
+                        )}
                       </p>
                       <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5 truncate max-w-[250px]">
                         {product.description || 'Sin descripción'}
