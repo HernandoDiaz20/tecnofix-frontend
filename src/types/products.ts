@@ -1,4 +1,4 @@
-
+import type { ProductSpec } from './index';
 
 export interface CreateProductRequest {
   sku: string;
@@ -6,6 +6,9 @@ export interface CreateProductRequest {
   description: string;
   imageUrl: string | null;
   categoryId: string | null;
+  brand: string;
+  color?: string | null;
+  specs?: ProductSpec[] | null;
   purchasePrice: number;
   salePrice: number;
   stock: number;
@@ -17,6 +20,9 @@ export interface UpdateProductRequest {
   description?: string;
   imageUrl?: string | null;
   categoryId?: string | null;
+  brand?: string;
+  color?: string | null;
+  specs?: ProductSpec[] | null;
   purchasePrice?: number;
   salePrice?: number;
 }
