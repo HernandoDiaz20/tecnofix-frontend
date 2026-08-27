@@ -30,7 +30,10 @@ const bookingSchema = z.object({
 type BookingFormValues = z.infer<typeof bookingSchema>;
 
 export const Booking = () => {
-  const { data: apiServices } = useServices();
+  const { data: rawServicesData } = useServices();
+  const apiServices: any[] = Array.isArray(rawServicesData) 
+    ? rawServicesData 
+    : ((rawServicesData as any)?.items || (rawServicesData as any)?.services || []);
   const { mutate: createAppointment, isPending, isSuccess, isError, error } = useCreateAppointment();
 
   const defaultServices = [
