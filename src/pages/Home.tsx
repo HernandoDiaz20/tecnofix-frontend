@@ -26,7 +26,7 @@ export const Home = () => {
   const displayProducts = apiProducts.slice(0, 3).map(p => ({
     id: p.id,
     name: p.name,
-    brand: 'TecnoFix',
+    brand: p.brand || 'TecnoFix',
     specs: p.description || `SKU: ${p.sku}`,
     price: p.salePrice || 0,
     image: p.imageUrl || 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=600&q=80',
