@@ -18,53 +18,45 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
-import type { Product } from '@/types';
-import type { CreateProductRequest, UpdateProductRequest } from '@/types/products';
-import { useCreateProduct, useUpdateProduct } from '@/api/admin/product-hooks';
+import { Loader2, Package } from 'lucide-react';
+import type { Part } from '@/types/parts';
+import { useCreatePart, useUpdatePart } from '@/api/admin/part-hooks';
 import { useToast } from '@/hooks/use-toast';
 import { AxiosError } from 'axios';
 import type { ApiError } from '@/types';
 
-const productSchema = z.object({
-  sku: z.string().min(1, 'El SKU es obligatorio'),
+const partSchema = z.object({
   name: z.string().min(1, 'El nombre es obligatorio'),
-  description: z.string().optional(),
-  imageUrl: z.string().url('Debe ser una URL válida').optional().or(z.literal('')),
-  purchasePrice: z.coerce.number().min(0, 'El precio debe ser positivo'),
-  salePrice: z.coerce.number().min(0, 'El precio debe ser positivo'),
+  sku: z.string().min(1, 'El SKU es obligatorio'),
+  purchasePrice: z.coerce.number().min(0, 'El precio no puede ser negativo'),
+  salePrice: z.coerce.number().min(0, 'El precio no puede ser negativo'),
   stock: z.coerce.number().int().min(0, 'El stock no puede ser negativo').optional(),
 });
 
-type ProductFormValues = z.infer<typeof productSchema>;
-
-interface ProductFormProps {
+interface PartFormProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  product?: Product;
+  part?: Part;
 }
 
-export const ProductForm: React.FC<ProductFormProps> = ({
+export const PartForm: React.FC<PartFormProps> = ({
   isOpen,
   onOpenChange,
-  product,
+  part,
 }) => {
-  const isEditing = !!product;
+  const isEditing = !!part;
   const { toast } = useToast();
 
-  const createMutation = useCreateProduct();
-  const updateMutation = useUpdateProduct();
+  const createMutation = useCreatePart();
+  const updateMutation = useUpdatePart();
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
   const form = useForm<any>({
-    resolver: zodResolver(productSchema),
+    resolver: zodResolver(partSchema),
     defaultValues: {
-      sku: '',
       name: '',
-      description: '',
-      imageUrl: '',
+      sku: '',
       purchasePrice: 0,
       salePrice: 0,
       stock: 0,
@@ -72,51 +64,48 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   });
 
   useEffect(() => {
-    if (product && isOpen) {
+    if (part && isOpen) {
       form.reset({
-        sku: product.sku,
-        name: product.name,
-        description: product.description || '',
-        imageUrl: product.imageUrl || '',
-        purchasePrice: product.purchasePrice,
-        salePrice: product.salePrice,
-        stock: product.stock, // ignored in submission for edit, but good for form state
+        name: part.name,
+        sku: part.sku,
+        purchasePrice: part.purchasePrice,
+        salePrice: part.salePrice,
+        stock: part.stock, // Not submitted on edit, just for UI if needed
       });
     } else if (!isOpen) {
       form.reset();
     }
-  }, [product, isOpen, form]);
+  }, [part, isOpen, form]);
 
-  const onSubmit = async (values: ProductFormValues) => {
+  const onSubmit = async (values: z.infer<typeof partSchema>) => {
     try {
-      const payload = {
-        ...values,
-        imageUrl: values.imageUrl || null,
-        description: values.description || '',
-        categoryId: null, // As per requirements, categoryId is hidden and sent as null
-      };
-
       if (isEditing) {
-        // En edición no se envía el stock
-        const { stock, ...updatePayload } = payload;
+        // En edición, no se envía el stock
+        const { stock, ...updatePayload } = values;
         await updateMutation.mutateAsync({
-          id: product.id,
-          data: updatePayload as UpdateProductRequest
+          id: part.id,
+          data: updatePayload
         });
         toast({
-          title: 'Producto actualizado',
-          description: 'El producto se ha actualizado correctamente.',
+          title: 'Repuesto actualizado',
+          description: 'El repuesto se ha actualizado correctamente.',
         });
       } else {
-        await createMutation.mutateAsync(payload as CreateProductRequest);
+        await createMutation.mutateAsync({
+          name: values.name,
+          sku: values.sku,
+          purchasePrice: values.purchasePrice,
+          salePrice: values.salePrice,
+          stock: values.stock || 0,
+        });
         toast({
-          title: 'Producto creado',
-          description: 'El producto se ha creado correctamente.',
+          title: 'Repuesto registrado',
+          description: 'El repuesto se ha registrado correctamente.',
         });
       }
       onOpenChange(false);
     } catch (error) {
-      let errorMessage = 'Ocurrió un error al guardar el producto.';
+      let errorMessage = 'Ocurrió un error al guardar el repuesto.';
       if (error instanceof AxiosError && error.response?.data) {
         const apiError = error.response.data as ApiError;
         errorMessage = apiError.error?.message || errorMessage;
@@ -131,33 +120,33 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">
-            {isEditing ? 'Editar Producto' : 'Añadir Nuevo Producto'}
+            {isEditing ? 'Editar Repuesto' : 'Añadir Nuevo Repuesto'}
           </DialogTitle>
           <DialogDescription className="text-on-surface-variant pt-2">
-            Completa los detalles del producto o repuesto a continuación.
+            Ingresa la información básica del repuesto.
           </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit as any)} className="space-y-4 mt-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem className="md:col-span-2">
-                    <FormLabel className="text-[13px] font-semibold text-[#191C1E] tracking-wider uppercase">Nombre del Producto</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Ej. Pantalla OLED iPhone 13 Pro" className="border-[#E0E3E5] focus-visible:ring-primary" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-[13px] font-semibold text-[#191C1E] tracking-wider uppercase">Nombre del Repuesto</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Ej. Batería Samsung S22 Ultra" className="border-[#E0E3E5] focus-visible:ring-primary" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="sku"
@@ -165,14 +154,14 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                   <FormItem>
                     <FormLabel className="text-[13px] font-semibold text-[#191C1E] tracking-wider uppercase">SKU</FormLabel>
                     <FormControl>
-                      <Input placeholder="Ej. SCR-IP13-001" className="border-[#E0E3E5] focus-visible:ring-primary uppercase" {...field} />
+                      <Input placeholder="Ej. BAT-S22-001" className="border-[#E0E3E5] focus-visible:ring-primary uppercase" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              {!isEditing && (
+              {!isEditing ? (
                 <FormField
                   control={form.control}
                   name="stock"
@@ -186,15 +175,23 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                     </FormItem>
                   )}
                 />
-              )}
-              {isEditing && (
-                <div className="flex flex-col justify-end pb-2">
-                  <span className="text-sm text-on-surface-variant font-medium">
-                    El stock se gestiona a través de entradas/salidas.
+              ) : (
+                <div className="flex flex-col justify-end">
+                  <div className="bg-surface-container-low p-2.5 rounded-lg border border-outline-variant flex items-center justify-between">
+                    <span className="text-[13px] font-semibold text-on-surface-variant uppercase tracking-wider">Stock Actual</span>
+                    <div className="flex items-center gap-1.5 font-data-mono font-medium text-on-surface">
+                      <Package className="w-4 h-4 text-primary" />
+                      {part.stock}
+                    </div>
+                  </div>
+                  <span className="text-[10px] text-on-surface-variant mt-1 text-right">
+                    (Solo lectura)
                   </span>
                 </div>
               )}
+            </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="purchasePrice"
@@ -228,38 +225,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                   </FormItem>
                 )}
               />
-
-              <FormField
-                control={form.control}
-                name="imageUrl"
-                render={({ field }) => (
-                  <FormItem className="md:col-span-2">
-                    <FormLabel className="text-[13px] font-semibold text-[#191C1E] tracking-wider uppercase">URL de la Imagen (Opcional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="https://ejemplo.com/imagen.jpg" className="border-[#E0E3E5] focus-visible:ring-primary" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem className="md:col-span-2">
-                    <FormLabel className="text-[13px] font-semibold text-[#191C1E] tracking-wider uppercase">Descripción</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Descripción detallada del producto o repuesto..."
-                        className="resize-none border-[#E0E3E5] focus-visible:ring-primary h-24"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
             </div>
 
             <div className="flex justify-end gap-2 pt-4 border-t border-outline-variant mt-6">
@@ -283,7 +248,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                     Guardando...
                   </>
                 ) : (
-                  'Guardar Producto'
+                  'Guardar Repuesto'
                 )}
               </Button>
             </div>

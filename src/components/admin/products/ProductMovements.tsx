@@ -48,12 +48,12 @@ export const ProductMovements: React.FC<ProductMovementsProps> = ({
   product,
 }) => {
   const { toast } = useToast();
-  
-  const { 
-    data: movementsData, 
-    isLoading: isLoadingMovements 
+
+  const {
+    data: movementsData,
+    isLoading: isLoadingMovements
   } = useProductMovements(product?.id || '');
-  
+
   const createMutation = useCreateProductMovement();
 
   const form = useForm<any>({
@@ -67,13 +67,13 @@ export const ProductMovements: React.FC<ProductMovementsProps> = ({
 
   const onSubmit = async (values: MovementFormValues) => {
     if (!product) return;
-    
+
     try {
       await createMutation.mutateAsync({
         id: product.id,
         data: values,
       });
-      
+
       toast({
         title: 'Movimiento registrado',
         description: 'El inventario se ha actualizado correctamente.',
@@ -122,7 +122,7 @@ export const ProductMovements: React.FC<ProductMovementsProps> = ({
                     <FormItem>
                       <FormLabel className="text-[13px] font-semibold text-[#191C1E] tracking-wider uppercase">Tipo de Movimiento</FormLabel>
                       <FormControl>
-                        <select 
+                        <select
                           className="w-full appearance-none bg-surface-container-lowest border border-outline-variant rounded-lg py-2.5 px-3 font-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all cursor-pointer"
                           {...field}
                         >
@@ -187,7 +187,7 @@ export const ProductMovements: React.FC<ProductMovementsProps> = ({
               <span>Historial</span>
               <span className="text-sm font-normal text-on-surface-variant font-data-mono">Stock actual: {product?.stock}</span>
             </h3>
-            
+
             <div className="bg-surface border border-outline-variant rounded-xl overflow-hidden shadow-sm">
               <div className="overflow-x-auto max-h-[400px]">
                 <table className="w-full text-left border-collapse text-sm">

@@ -2,7 +2,7 @@ import React from 'react';
 import { StatCard } from '@/components/admin/StatCard';
 import { RecentOrdersTable } from '@/components/admin/RecentOrdersTable';
 import { OrdersStatusChart } from '@/components/admin/OrdersStatusChart';
-import { 
+import {
   useAdminProductsCount,
   useAdminCustomersCount,
   useAdminPartsCount,
@@ -33,28 +33,28 @@ export const Dashboard: React.FC = () => {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
-        <StatCard 
-          title="Productos en Inventario" 
-          value={productsCount ?? '--'} 
+        <StatCard
+          title="Productos en Inventario"
+          value={productsCount ?? '--'}
           icon="inventory_2"
           isLoading={loadingProducts}
           isError={errorProducts}
         />
-        <StatCard 
-          title="Stock Bajo" 
-          value="N/D" 
+        <StatCard
+          title="Stock Bajo"
+          value="N/D"
           icon="warning"
           description="Datos no disponibles"
         />
-        <StatCard 
-          title="Órdenes Activas" 
-          value="N/D" 
+        <StatCard
+          title="Órdenes Activas"
+          value="N/D"
           icon="build"
           description="En desarrollo"
         />
-        <StatCard 
-          title="Citas de Hoy" 
-          value={todayAppointments?.length ?? '--'} 
+        <StatCard
+          title="Citas de Hoy"
+          value={todayAppointments?.length ?? '--'}
           icon="calendar_today"
           isLoading={loadingTodayApps}
           isError={errorTodayApps}
@@ -63,23 +63,23 @@ export const Dashboard: React.FC = () => {
 
       {/* Extra KPIs (Para conservar las métricas que sí funcionan) */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        <StatCard 
-          title="Total Clientes" 
-          value={customersCount ?? '--'} 
+        <StatCard
+          title="Total Clientes"
+          value={customersCount ?? '--'}
           icon="group"
           isLoading={loadingCustomers}
           isError={errorCustomers}
         />
-        <StatCard 
-          title="Repuestos Disponibles" 
-          value={partsCount ?? '--'} 
+        <StatCard
+          title="Repuestos Disponibles"
+          value={partsCount ?? '--'}
           icon="build_circle"
           isLoading={loadingParts}
           isError={errorParts}
         />
-        <StatCard 
-          title="Citas Pendientes" 
-          value={pendingAppointments?.length ?? '--'} 
+        <StatCard
+          title="Citas Pendientes"
+          value={pendingAppointments?.length ?? '--'}
           icon="pending_actions"
           isLoading={loadingPendingApps}
           isError={errorPendingApps}
@@ -100,10 +100,10 @@ export const Dashboard: React.FC = () => {
 
         {/* Right Column: Status & Alerts */}
         <div className="space-y-6 flex flex-col">
-          <OrdersStatusChart 
-            data={statusReport} 
-            isLoading={loadingStatus} 
-            isError={errorStatus} 
+          <OrdersStatusChart
+            data={statusReport}
+            isLoading={loadingStatus}
+            isError={errorStatus}
           />
 
           {/* Alerts Card */}
@@ -122,10 +122,10 @@ export const Dashboard: React.FC = () => {
 
       {/* Recent Orders Table */}
       <div className="mb-8">
-        <RecentOrdersTable 
-          orders={recentOrders} 
-          isLoading={loadingOrders} 
-          isError={errorOrders} 
+        <RecentOrdersTable
+          orders={recentOrders}
+          isLoading={loadingOrders}
+          isError={errorOrders}
         />
       </div>
     </>

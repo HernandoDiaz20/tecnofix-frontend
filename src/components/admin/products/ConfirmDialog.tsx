@@ -57,9 +57,8 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
             variant={variant}
             onClick={onConfirm}
             disabled={isLoading}
-            className={`w-full sm:w-auto ${
-              variant === 'default' ? 'bg-primary text-on-primary hover:bg-primary/90' : ''
-            }`}
+            className={`w-full sm:w-auto ${variant === 'default' ? 'bg-primary text-on-primary hover:bg-primary/90' : ''
+              }`}
           >
             {isLoading ? (
               <>

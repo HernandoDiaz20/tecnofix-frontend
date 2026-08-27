@@ -22,7 +22,7 @@ export const Pagination: React.FC<PaginationProps> = ({
   // Generate page numbers to show
   const getPageNumbers = () => {
     const pages: (number | string)[] = [];
-    
+
     if (totalPages <= 5) {
       for (let i = 1; i <= totalPages; i++) pages.push(i);
     } else {
@@ -44,7 +44,7 @@ export const Pagination: React.FC<PaginationProps> = ({
       <span className="text-sm text-on-surface-variant font-medium">
         Mostrando {startItem} a {endItem} de {totalItems} resultados
       </span>
-      
+
       <div className="flex gap-1">
         <button
           onClick={() => onPageChange(currentPage - 1)}
@@ -62,8 +62,8 @@ export const Pagination: React.FC<PaginationProps> = ({
             disabled={typeof page === 'string'}
             className={cn(
               "p-1.5 rounded text-sm font-medium w-8 h-8 flex items-center justify-center transition-colors",
-              typeof page === 'string' 
-                ? "text-on-surface-variant cursor-default hover:bg-transparent" 
+              typeof page === 'string'
+                ? "text-on-surface-variant cursor-default hover:bg-transparent"
                 : page === currentPage
                   ? "bg-primary-container text-on-primary-container"
                   : "text-on-surface-variant hover:bg-surface-container hover:text-on-surface"
