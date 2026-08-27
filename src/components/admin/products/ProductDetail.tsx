@@ -6,7 +6,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ProductStatusBadge } from './ProductStatusBadge';
-import { Edit2, Package, Tag, Hash, Image as ImageIcon } from 'lucide-react';
+import { Edit2, Package, Tag, Hash, Image as ImageIcon, Briefcase, Palette, ListChecks } from 'lucide-react';
 import type { Product } from '@/types';
 
 interface ProductDetailProps {
@@ -28,8 +28,8 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden">
-        <div className="bg-surface-container-low p-6 border-b border-outline-variant flex items-start gap-4">
+      <DialogContent className="sm:max-w-[550px] p-0 overflow-hidden max-h-[90vh] flex flex-col">
+        <div className="bg-surface-container-low p-6 border-b border-outline-variant flex items-start gap-4 shrink-0">
           <div className="w-20 h-20 bg-surface-container-highest rounded-lg border border-outline-variant flex items-center justify-center overflow-hidden shrink-0">
             {product.imageUrl ? (
               <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
@@ -56,7 +56,7 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({
           </div>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className="p-6 overflow-y-auto space-y-6">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
               <div className="flex items-center gap-1.5 text-on-surface-variant text-sm font-medium">
@@ -70,7 +70,7 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({
               </div>
               <p className="font-data-mono text-on-surface font-medium text-lg">{product.stock}</p>
             </div>
-
+            
             <div className="space-y-1">
               <div className="flex items-center gap-1.5 text-on-surface-variant text-sm font-medium">
                 <Tag className="w-4 h-4" /> Precio Venta
@@ -85,6 +85,23 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({
             </div>
           </div>
 
+          <div className="grid grid-cols-2 gap-4 pt-4 border-t border-outline-variant/50">
+            <div className="space-y-1">
+              <div className="flex items-center gap-1.5 text-on-surface-variant text-sm font-medium">
+                <Briefcase className="w-4 h-4" /> Marca
+              </div>
+              <p className="text-on-surface font-medium">{product.brand || 'Genérico'}</p>
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-1.5 text-on-surface-variant text-sm font-medium">
+                <Palette className="w-4 h-4" /> Color
+              </div>
+              <p className="text-on-surface font-medium">
+                {product.color ? product.color : <span className="text-outline italic">Sin especificar</span>}
+              </p>
+            </div>
+          </div>
+
           {product.description && (
             <div className="space-y-1 pt-4 border-t border-outline-variant/50">
               <h4 className="text-sm font-medium text-on-surface-variant">Descripción</h4>
@@ -93,9 +110,36 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({
               </p>
             </div>
           )}
+
+          <div className="space-y-2 pt-4 border-t border-outline-variant/50">
+             <div className="flex items-center gap-1.5 text-on-surface-variant text-sm font-medium mb-2">
+                <ListChecks className="w-4 h-4" /> Especificaciones
+             </div>
+             {product.specs && product.specs.length > 0 ? (
+               <div className="bg-surface-container-lowest border border-outline-variant rounded-lg overflow-hidden">
+                 <table className="w-full text-sm">
+                   <tbody className="divide-y divide-outline-variant/50">
+                     {product.specs.map((spec, i) => (
+                       <tr key={i} className="hover:bg-surface-container-low/50 transition-colors">
+                         <td className="py-2 px-3 font-medium text-on-surface-variant w-1/3 bg-surface-container-lowest/50 border-r border-outline-variant/50">
+                           {spec.label}
+                         </td>
+                         <td className="py-2 px-3 text-on-surface">
+                           {spec.value}
+                         </td>
+                       </tr>
+                     ))}
+                   </tbody>
+                 </table>
+               </div>
+             ) : (
+               <p className="text-sm text-outline italic">Sin especificaciones</p>
+             )}
+          </div>
+
         </div>
 
-        <div className="bg-surface-container-lowest p-4 border-t border-outline-variant flex justify-end gap-2">
+        <div className="bg-surface-container-lowest p-4 border-t border-outline-variant flex justify-end gap-2 shrink-0">
           <Button
             variant="outline"
             onClick={() => {
