@@ -14,23 +14,23 @@ export const Products: React.FC = () => {
   const { toast } = useToast();
   const [page, setPage] = useState(1);
   const pageSize = 10;
-  
+
   const { data, isLoading } = useAdminProducts(page, pageSize);
   const toggleMutation = useToggleProductAvailability();
-  
+
   // Modals state
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isMovementsOpen, setIsMovementsOpen] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-  
+
   // Selected product state
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   // Frontend filtering state
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
-  
+
   const handleCreate = () => {
     setSelectedProduct(null);
     setIsFormOpen(true);
@@ -58,7 +58,7 @@ export const Products: React.FC = () => {
 
   const confirmToggleStatus = async () => {
     if (!selectedProduct) return;
-    
+
     try {
       await toggleMutation.mutateAsync({
         id: selectedProduct.id,
@@ -81,20 +81,20 @@ export const Products: React.FC = () => {
 
   // Derived data
   const rawProducts = data?.items || [];
-  
+
   // Frontend filtering (since the endpoint returns all according to docs, and we only paginate the filtered result if we do frontend pagination, 
   // but since pagination is server-side `page, pageSize`, the filter here only filters the current page. 
   // This is a known limitation when filtering without dedicated API query params).
   const filteredProducts = rawProducts.filter(p => {
-    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          p.sku.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === '' 
-      ? true 
-      : statusFilter === 'in_stock' ? p.stock > 0 
-      : statusFilter === 'out_of_stock' ? p.stock === 0 
-      : statusFilter === 'inactive' ? !p.active
-      : true;
-      
+    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.sku.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === ''
+      ? true
+      : statusFilter === 'in_stock' ? p.stock > 0
+        : statusFilter === 'out_of_stock' ? p.stock === 0
+          : statusFilter === 'inactive' ? !p.active
+            : true;
+
     return matchesSearch && matchesStatus;
   });
 
@@ -109,7 +109,7 @@ export const Products: React.FC = () => {
           </p>
         </div>
         <div className="flex flex-wrap gap-sm">
-          <button 
+          <button
             onClick={handleCreate}
             className="bg-primary text-on-primary hover:bg-primary/90 font-label-md text-label-md px-4 py-3 rounded-lg flex items-center gap-2 transition-colors shadow-sm"
           >
@@ -123,7 +123,7 @@ export const Products: React.FC = () => {
       <div className="bg-surface border border-outline-variant rounded-xl p-md flex flex-col lg:flex-row gap-md items-center shadow-sm">
         <div className="relative flex-1 w-full group">
           <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors" />
-          <input 
+          <input
             type="text"
             className="w-full bg-surface-container-lowest border border-outline-variant rounded-lg py-2.5 pl-10 pr-4 font-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-on-surface-variant/60"
             placeholder="Buscar por nombre o SKU..."
@@ -131,9 +131,9 @@ export const Products: React.FC = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        
+
         <div className="flex flex-wrap items-center gap-sm w-full lg:w-auto">
-          <select 
+          <select
             className="appearance-none bg-surface-container-lowest border border-outline-variant rounded-lg py-2.5 px-4 font-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all cursor-pointer min-w-[150px]"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
@@ -143,8 +143,8 @@ export const Products: React.FC = () => {
             <option value="out_of_stock">Agotado</option>
             <option value="inactive">Inactivos</option>
           </select>
-          
-          <button 
+
+          <button
             onClick={() => { setSearchTerm(''); setStatusFilter(''); }}
             className="bg-surface-container-low text-on-surface border border-outline-variant hover:bg-surface-container p-2.5 rounded-lg transition-colors"
             title="Limpiar Filtros"
@@ -163,9 +163,9 @@ export const Products: React.FC = () => {
         onView={handleView}
         onShowMovements={handleShowMovements}
       />
-      
+
       {/* Pagination */}
-      <Pagination 
+      <Pagination
         currentPage={page}
         totalItems={data?.total || 0}
         pageSize={pageSize}
@@ -173,12 +173,12 @@ export const Products: React.FC = () => {
       />
 
       {/* Modals */}
-      <ProductForm 
-        isOpen={isFormOpen} 
-        onOpenChange={setIsFormOpen} 
-        product={selectedProduct || undefined} 
+      <ProductForm
+        isOpen={isFormOpen}
+        onOpenChange={setIsFormOpen}
+        product={selectedProduct || undefined}
       />
-      
+
       <ProductDetail
         isOpen={isDetailOpen}
         onOpenChange={setIsDetailOpen}
@@ -186,7 +186,7 @@ export const Products: React.FC = () => {
         onEdit={handleEdit}
         onShowMovements={handleShowMovements}
       />
-      
+
       <ProductMovements
         isOpen={isMovementsOpen}
         onOpenChange={setIsMovementsOpen}

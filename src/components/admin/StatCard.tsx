@@ -9,12 +9,12 @@ interface StatCardProps {
   isError?: boolean;
 }
 
-export const StatCard: React.FC<StatCardProps> = ({ 
-  title, 
-  value, 
-  icon, 
-  isLoading, 
-  isError 
+export const StatCard: React.FC<StatCardProps> = ({
+  title,
+  value,
+  icon,
+  isLoading,
+  isError
 }) => {
   return (
     <div className="bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-outline-variant/50 flex flex-col justify-between min-h-[110px]">

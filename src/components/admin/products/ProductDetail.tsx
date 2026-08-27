@@ -70,7 +70,7 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({
               </div>
               <p className="font-data-mono text-on-surface font-medium text-lg">{product.stock}</p>
             </div>
-            
+
             <div className="space-y-1">
               <div className="flex items-center gap-1.5 text-on-surface-variant text-sm font-medium">
                 <Tag className="w-4 h-4" /> Precio Venta

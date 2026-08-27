@@ -44,8 +44,8 @@ export const AdminLayout: React.FC = () => {
     <div className="flex h-screen bg-background text-on-background overflow-hidden antialiased">
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-20 lg:hidden" 
+        <div
+          className="fixed inset-0 bg-black/50 z-20 lg:hidden"
           onClick={closeSidebar}
         />
       )}
@@ -59,9 +59,9 @@ export const AdminLayout: React.FC = () => {
       >
         <div className="p-6 flex items-center gap-3 border-b border-outline-variant justify-between">
           <div className="flex items-center gap-3">
-            <img 
-              alt="TecnoFix Logo" 
-              className="h-8 w-auto" 
+            <img
+              alt="TecnoFix Logo"
+              className="h-8 w-auto"
               src="https://lh3.googleusercontent.com/aida-public/AB6AXuD7tG9Vrq6YpqCQtzpvPupKZy0CHDM_cZ5o6px-NwkaHPW-oequVx_nnYktk-OEDCBbhzEx7THdRmPhfP6DFdD1zQ7bzL3hUbKA2eaa74omGFCtYMahUh9Bnpc3ct4Z5eG2YA4LWFkNUMqOM8v_bVR88QF5B1DDlLtk7h1AydPn6BOQloi_-e5AyV3Wu0KKWeDxWuhl_B43XH-lZRSDdIafEV_Z5gMIlAVaT3u8HY7LAS72mU1p984d"
             />
             <div>
@@ -69,7 +69,7 @@ export const AdminLayout: React.FC = () => {
               <p className="text-sm text-on-surface-variant">Technical Operations</p>
             </div>
           </div>
-          <button 
+          <button
             className="lg:hidden text-on-surface-variant p-1 rounded-full hover:bg-surface-container"
             onClick={closeSidebar}
           >
@@ -95,8 +95,8 @@ export const AdminLayout: React.FC = () => {
                 >
                   {({ isActive }) => (
                     <>
-                      <span 
-                        className="material-symbols-outlined" 
+                      <span
+                        className="material-symbols-outlined"
                         style={isActive ? { fontVariationSettings: "'FILL' 1" } : undefined}
                       >
                         {item.icon}
@@ -118,7 +118,7 @@ export const AdminLayout: React.FC = () => {
               </button>
             </li>
             <li>
-              <button 
+              <button
                 onClick={handleLogout}
                 className="w-full text-error hover:bg-error-container/50 rounded-lg px-4 py-3 flex items-center gap-3 text-sm font-semibold transition-colors"
               >
@@ -142,9 +142,9 @@ export const AdminLayout: React.FC = () => {
             </button>
             <div className="relative w-full max-w-md hidden md:block">
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
-              <input 
-                className="w-full pl-10 pr-4 py-2 bg-surface border border-outline-variant rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all" 
-                placeholder="Buscar orden, cliente..." 
+              <input
+                className="w-full pl-10 pr-4 py-2 bg-surface border border-outline-variant rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                placeholder="Buscar orden, cliente..."
                 type="text"
               />
             </div>
