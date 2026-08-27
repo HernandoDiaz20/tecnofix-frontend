@@ -9,90 +9,19 @@ export const Catalog = () => {
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const { data, isLoading } = useProducts();
 
-  const defaultCatalog = [
-    {
-      id: 'mock-1',
-      sku: 'IPH-15PRO-256',
-      name: 'iPhone 15 Pro 256GB',
-      brand: 'Apple',
-      description: 'Pantalla Super Retina XDR OLED 6.1", Chip A17 Pro, Titanio.',
-      salePrice: 4500000,
-      stock: 5,
-      imageUrl: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?auto=format&fit=crop&w=600&q=80',
-      category: 'Celulares'
-    },
-    {
-      id: 'mock-2',
-      sku: 'MBA-M2-256',
-      name: 'MacBook Air M2 13.6"',
-      brand: 'Apple',
-      description: 'Chip M2, 8GB RAM Unificada, 256GB SSD, Teclado Magic Keyboard.',
-      salePrice: 5200000,
-      stock: 3,
-      imageUrl: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=600&q=80',
-      category: 'Portátiles'
-    },
-    {
-      id: 'mock-3',
-      sku: 'S23-ULT-256',
-      name: 'Samsung Galaxy S23 Ultra',
-      brand: 'Samsung',
-      description: '256GB, 12GB RAM, Pantalla Dynamic AMOLED 2X 120Hz, S-Pen.',
-      salePrice: 4800000,
-      stock: 4,
-      imageUrl: 'https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?auto=format&fit=crop&w=600&q=80',
-      category: 'Celulares'
-    },
-    {
-      id: 'mock-4',
-      sku: 'IPAD-AIR-64',
-      name: 'iPad Air 5ta Gen M1',
-      brand: 'Apple',
-      description: 'Pantalla Liquid Retina 10.9", Chip M1, Soporte Apple Pencil 2da Gen.',
-      salePrice: 3100000,
-      stock: 6,
-      imageUrl: 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?auto=format&fit=crop&w=600&q=80',
-      category: 'Tablets'
-    },
-    {
-      id: 'mock-5',
-      sku: 'DISP-IP13-OEM',
-      name: 'Pantalla Original iPhone 13',
-      brand: 'Repuestos OEM',
-      description: 'Módulo de pantalla completo original certificado con adhesivo de sellado.',
-      salePrice: 450000,
-      stock: 12,
-      imageUrl: 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?auto=format&fit=crop&w=600&q=80',
-      category: 'Repuestos'
-    },
-    {
-      id: 'mock-6',
-      sku: 'BAT-IP12-OEM',
-      name: 'Batería Original iPhone 12 / 12 Pro',
-      brand: 'Repuestos OEM',
-      description: 'Batería de polímero de litio 2815 mAh con control de ciclos.',
-      salePrice: 180000,
-      stock: 8,
-      imageUrl: 'https://images.unsplash.com/photo-1585338107529-13afc5f02586?auto=format&fit=crop&w=600&q=80',
-      category: 'Repuestos'
-    },
-  ];
+  const apiProducts: Product[] = Array.isArray(data) ? data : (data?.items || data?.products || []);
 
-  const apiProducts: Product[] = Array.isArray(data) ? data : data?.products || [];
-
-  const rawProducts = apiProducts.length > 0
-    ? apiProducts.map(p => ({
-        id: p.id,
-        sku: p.sku || 'SKU-GEN',
-        name: p.name,
-        brand: 'TecnoFix',
-        description: p.description || 'Repuesto o accesorio garantizado',
-        salePrice: p.salePrice || 0,
-        stock: p.stock || 0,
-        imageUrl: p.imageUrl || defaultCatalog[0].imageUrl,
-        category: 'General'
-      }))
-    : defaultCatalog;
+  const rawProducts = apiProducts.map(p => ({
+    id: p.id,
+    sku: p.sku || 'SKU-GEN',
+    name: p.name,
+    brand: p.brand || 'TecnoFix',
+    description: p.description || '',
+    salePrice: p.salePrice || 0,
+    stock: p.stock || 0,
+    imageUrl: p.imageUrl || 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=600&q=80',
+    category: p.categoryId || 'General'
+  }));
 
   const categories = ['Todos', 'Celulares', 'Tablets', 'Portátiles', 'Repuestos'];
 
