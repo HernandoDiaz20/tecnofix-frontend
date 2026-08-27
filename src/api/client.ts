@@ -11,7 +11,12 @@ export const apiClient = axios.create({
 
 apiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem('tecnofix_token');
-  if (token) {
+  
+  // No enviar el token en la ruta de login para evitar que un token expirado
+  // cause un 401 antes de que el backend procese las credenciales.
+  const isLoginRoute = config.url?.includes('/auth/login');
+  
+  if (token && !isLoginRoute) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
