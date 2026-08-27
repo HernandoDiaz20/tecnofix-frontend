@@ -19,52 +19,19 @@ import type { Product } from '@/types';
 export const Home = () => {
   const { data: productsData } = useProducts(1, 3);
   
-  // Default mock fallback items if backend is empty/loading to ensure the Stitch UI looks stunning immediately
-  const defaultFeatured = [
-    {
-      id: 'mock-1',
-      name: 'iPhone 15 Pro',
-      brand: 'Apple',
-      specs: '256GB Almacenamiento, Chip A17 Pro, Titanio Natural.',
-      price: 4500000,
-      image: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?auto=format&fit=crop&w=600&q=80',
-      available: true
-    },
-    {
-      id: 'mock-2',
-      name: 'MacBook Air M2',
-      brand: 'Apple',
-      specs: 'Chip M2, 8GB RAM, 256GB SSD, Pantalla Liquid Retina 13.6".',
-      price: 5200000,
-      image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=600&q=80',
-      available: true
-    },
-    {
-      id: 'mock-3',
-      name: 'Galaxy S23 Ultra',
-      brand: 'Samsung',
-      specs: '256GB, 12GB RAM, Cámara 200MP, S-Pen Integrado.',
-      price: 4800000,
-      image: 'https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?auto=format&fit=crop&w=600&q=80',
-      available: true
-    }
-  ];
-
   const apiProducts: Product[] = Array.isArray(productsData) 
     ? productsData 
-    : productsData?.products || [];
+    : (productsData?.items || productsData?.products || []);
 
-  const displayProducts = apiProducts.length > 0
-    ? apiProducts.slice(0, 3).map(p => ({
-        id: p.id,
-        name: p.name,
-        brand: 'Original OEM',
-        specs: p.description || `SKU: ${p.sku} - Repuesto de alta calidad`,
-        price: p.salePrice || 0,
-        image: p.imageUrl || defaultFeatured[0].image,
-        available: p.stock > 0
-      }))
-    : defaultFeatured;
+  const displayProducts = apiProducts.slice(0, 3).map(p => ({
+    id: p.id,
+    name: p.name,
+    brand: 'TecnoFix',
+    specs: p.description || `SKU: ${p.sku}`,
+    price: p.salePrice || 0,
+    image: p.imageUrl || 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=600&q=80',
+    available: p.stock > 0
+  }));
 
   const categories = [
     { name: 'Celulares', icon: Smartphone, path: '/productos?cat=celulares' },
