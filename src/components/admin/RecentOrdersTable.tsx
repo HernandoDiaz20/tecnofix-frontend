@@ -7,25 +7,25 @@ interface RecentOrdersTableProps {
   isError: boolean;
 }
 
-export const RecentOrdersTable: React.FC<RecentOrdersTableProps> = ({ 
-  orders, 
-  isLoading, 
-  isError 
+export const RecentOrdersTable: React.FC<RecentOrdersTableProps> = ({
+  orders,
+  isLoading,
+  isError
 }) => {
   const getStatusBadge = (status: DashboardWorkOrder['currentStatus'] | undefined) => {
     switch (status) {
-      case 'INGRESADO': 
-      case 'EN_REVISION': 
+      case 'INGRESADO':
+      case 'EN_REVISION':
         return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-container text-on-primary-container">En Diagnóstico</span>;
-      case 'ESPERANDO_REPUESTO': 
+      case 'ESPERANDO_REPUESTO':
         return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-surface-container-highest text-on-surface">Esperando Pieza</span>;
-      case 'EN_REPARACION': 
+      case 'EN_REPARACION':
         return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-container text-on-primary-container">En Reparación</span>;
-      case 'REPARADO': 
-      case 'LISTO_PARA_ENTREGA': 
-      case 'ENTREGADO': 
+      case 'REPARADO':
+      case 'LISTO_PARA_ENTREGA':
+      case 'ENTREGADO':
         return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-secondary text-on-secondary">Completado</span>;
-      default: 
+      default:
         return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-surface-container-highest text-on-surface">Desconocido</span>;
     }
   };
@@ -53,7 +53,7 @@ export const RecentOrdersTable: React.FC<RecentOrdersTableProps> = ({
           <button className="px-3 py-1.5 border border-outline-variant rounded-md text-sm font-semibold hover:bg-surface-container transition-colors">Exportar</button>
         </div>
       </div>
-      
+
       <div className="overflow-x-auto flex-1">
         <table className="w-full text-left border-collapse min-w-[700px]">
           <thead className="bg-surface-container-low border-b border-outline-variant/50">
