@@ -24,6 +24,7 @@ import { WorkOrderDetail } from '@/pages/admin/WorkOrderDetail';
 import { Warranties } from '@/pages/admin/Warranties';
 import { Reports } from '@/pages/admin/Reports';
 import { Audit } from '@/pages/admin/Audit';
+import { Purchases } from '@/pages/admin/Purchases';
 
 function App() {
   return (
@@ -53,9 +54,12 @@ function App() {
           <Route path="citas" element={<Appointments />} />
           <Route path="ordenes" element={<WorkOrders />} />
           <Route path="ordenes/:id" element={<WorkOrderDetail />} />
+          <Route path="ordenes-servicio" element={<WorkOrders />} />
+          <Route path="ordenes-servicio/:id" element={<WorkOrderDetail />} />
           <Route path="garantias" element={<Warranties />} />
           <Route path="reportes" element={<Reports />} />
           <Route path="auditoria" element={<Audit />} />
+          <Route path="compras" element={<Purchases />} />
         </Route>
       </Routes>
     </Router>
