@@ -19,16 +19,12 @@ export const AdminLayout: React.FC = () => {
 
   const navItems = [
     { label: 'Dashboard', path: '/admin/dashboard', icon: 'dashboard' },
-    { label: 'Órdenes', path: '/admin/ordenes', icon: 'build' },
-    { label: 'Citas', path: '/admin/citas', icon: 'calendar_today' },
-    { label: 'Productos', path: '/admin/productos', icon: 'inventory_2' },
-    { label: 'Inventario', path: '/admin/inventario', icon: 'inventory' },
-    { label: 'Repuestos', path: '/admin/repuestos', icon: 'build_circle' },
+    { label: 'Inventario', path: '/admin/inventario', icon: 'inventory_2' },
+    { label: 'Compras', path: '/admin/compras', icon: 'shopping_cart' },
     { label: 'Clientes', path: '/admin/clientes', icon: 'group' },
     { label: 'Técnicos', path: '/admin/tecnicos', icon: 'engineering' },
-    { label: 'Garantías', path: '/admin/garantias', icon: 'verified' },
+    { label: 'Órdenes de Servicio', path: '/admin/ordenes-servicio', icon: 'build' },
     { label: 'Reportes', path: '/admin/reportes', icon: 'analytics' },
-    { label: 'Auditoría', path: '/admin/auditoria', icon: 'history' },
   ];
 
   const getInitials = (name: string) => {
@@ -112,11 +108,6 @@ export const AdminLayout: React.FC = () => {
 
         <div className="p-2 border-t border-outline-variant">
           <ul className="space-y-1">
-            <li>
-              <button className="w-full text-on-surface-variant hover:bg-surface-container-high rounded-lg px-4 py-3 flex items-center gap-3 text-sm font-semibold">
-                <span className="material-symbols-outlined">settings</span> Settings
-              </button>
-            </li>
             <li>
               <button
                 onClick={handleLogout}
