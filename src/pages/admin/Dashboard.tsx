@@ -4,22 +4,16 @@ import { RecentOrdersTable } from '@/components/admin/RecentOrdersTable';
 import { OrdersStatusChart } from '@/components/admin/OrdersStatusChart';
 import {
   useAdminProductsCount,
-  useAdminCustomersCount,
-  useAdminPartsCount,
   useAdminRecentOrders,
   useAdminTodayAppointments,
-  useAdminPendingAppointments,
   useAdminOrdersByStatus
 } from '@/api/admin-hooks';
 
 export const Dashboard: React.FC = () => {
   // Datos
   const { data: productsCount, isLoading: loadingProducts, isError: errorProducts } = useAdminProductsCount();
-  const { data: customersCount, isLoading: loadingCustomers, isError: errorCustomers } = useAdminCustomersCount();
-  const { data: partsCount, isLoading: loadingParts, isError: errorParts } = useAdminPartsCount();
   const { data: recentOrders, isLoading: loadingOrders, isError: errorOrders } = useAdminRecentOrders();
   const { data: todayAppointments, isLoading: loadingTodayApps, isError: errorTodayApps } = useAdminTodayAppointments();
-  const { data: pendingAppointments, isLoading: loadingPendingApps, isError: errorPendingApps } = useAdminPendingAppointments();
   const { data: statusReport, isLoading: loadingStatus, isError: errorStatus } = useAdminOrdersByStatus();
 
   return (
@@ -58,31 +52,6 @@ export const Dashboard: React.FC = () => {
           icon="calendar_today"
           isLoading={loadingTodayApps}
           isError={errorTodayApps}
-        />
-      </div>
-
-      {/* Extra KPIs (Para conservar las métricas que sí funcionan) */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        <StatCard
-          title="Total Clientes"
-          value={customersCount ?? '--'}
-          icon="group"
-          isLoading={loadingCustomers}
-          isError={errorCustomers}
-        />
-        <StatCard
-          title="Repuestos Disponibles"
-          value={partsCount ?? '--'}
-          icon="build_circle"
-          isLoading={loadingParts}
-          isError={errorParts}
-        />
-        <StatCard
-          title="Citas Pendientes"
-          value={pendingAppointments?.length ?? '--'}
-          icon="pending_actions"
-          isLoading={loadingPendingApps}
-          isError={errorPendingApps}
         />
       </div>
 
