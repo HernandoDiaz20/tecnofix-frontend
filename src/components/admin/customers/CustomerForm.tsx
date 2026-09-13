@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -20,30 +20,37 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
-import { useCreateCustomer } from '@/api/admin/customer-hooks';
+import type { Customer } from '@/types/customers';
+import { useCreateCustomer, useUpdateCustomer } from '@/api/admin/customer-hooks';
 import { useToast } from '@/hooks/use-toast';
 import { AxiosError } from 'axios';
 import type { ApiError } from '@/types';
 
 const customerSchema = z.object({
-  fullName: z.string().min(1, 'El nombre es obligatorio'),
-  email: z.string().email('Debe ser un email válido').optional().or(z.literal('')),
-  phone: z.string().optional().or(z.literal('')),
+  fullName: z.string().min(1, 'El nombre completo es obligatorio'),
+  email: z.string().email('El formato de email no es válido').nullable().optional().or(z.literal('')),
+  phone: z.string().nullable().optional().or(z.literal('')),
 });
 
 interface CustomerFormProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
+  customer?: Customer;
 }
 
 export const CustomerForm: React.FC<CustomerFormProps> = ({
   isOpen,
   onOpenChange,
+  customer,
 }) => {
+  const isEditing = !!customer;
   const { toast } = useToast();
-  const createMutation = useCreateCustomer();
 
-  const form = useForm<z.infer<typeof customerSchema>>({
+  const createMutation = useCreateCustomer();
+  const updateMutation = useUpdateCustomer();
+  const isSubmitting = createMutation.isPending || updateMutation.isPending;
+
+  const form = useForm<any>({
     resolver: zodResolver(customerSchema),
     defaultValues: {
       fullName: '',
@@ -52,21 +59,45 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
     },
   });
 
+  useEffect(() => {
+    if (customer && isOpen) {
+      form.reset({
+        fullName: customer.fullName,
+        email: customer.email || '',
+        phone: customer.phone || '',
+      });
+    } else if (!isOpen) {
+      form.reset();
+    }
+  }, [customer, isOpen, form]);
+
   const onSubmit = async (values: z.infer<typeof customerSchema>) => {
     try {
-      await createMutation.mutateAsync({
+      const payload = {
         fullName: values.fullName,
         email: values.email || null,
         phone: values.phone || null,
-      });
-      toast({
-        title: 'Cliente registrado',
-        description: 'El cliente se ha registrado correctamente.',
-      });
-      form.reset();
+      };
+
+      if (isEditing && customer) {
+        await updateMutation.mutateAsync({
+          id: customer.id,
+          data: payload,
+        });
+        toast({
+          title: 'Cliente actualizado',
+          description: 'La información del cliente se ha actualizado correctamente.',
+        });
+      } else {
+        await createMutation.mutateAsync(payload);
+        toast({
+          title: 'Cliente registrado',
+          description: 'El cliente se ha registrado exitosamente.',
+        });
+      }
       onOpenChange(false);
     } catch (error) {
-      let errorMessage = 'Ocurrió un error al registrar el cliente.';
+      let errorMessage = 'Ocurrió un error al guardar el cliente.';
       if (error instanceof AxiosError && error.response?.data) {
         const apiError = error.response.data as ApiError;
         errorMessage = apiError.error?.message || errorMessage;
@@ -81,10 +112,10 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[450px]">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">
-            Añadir Nuevo Cliente
+            {isEditing ? 'Editar Cliente' : 'Registrar Nuevo Cliente'}
           </DialogTitle>
           <DialogDescription className="text-on-surface-variant pt-2">
             Ingresa la información básica del cliente.
@@ -92,13 +123,15 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4">
+          <form onSubmit={form.handleSubmit(onSubmit as any)} className="space-y-4 mt-4">
             <FormField
               control={form.control}
               name="fullName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-[13px] font-semibold text-[#191C1E] tracking-wider uppercase">Nombre Completo</FormLabel>
+                  <FormLabel className="text-[13px] font-semibold text-[#191C1E] tracking-wider uppercase">
+                    Nombre Completo <span className="text-error">*</span>
+                  </FormLabel>
                   <FormControl>
                     <Input placeholder="Ej. Juan Pérez" className="border-[#E0E3E5] focus-visible:ring-primary" {...field} />
                   </FormControl>
@@ -112,7 +145,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-[13px] font-semibold text-[#191C1E] tracking-wider uppercase">Correo Electrónico (Opcional)</FormLabel>
+                  <FormLabel className="text-[13px] font-semibold text-[#191C1E] tracking-wider uppercase">Email (Opcional)</FormLabel>
                   <FormControl>
                     <Input type="email" placeholder="Ej. juan@ejemplo.com" className="border-[#E0E3E5] focus-visible:ring-primary" {...field} />
                   </FormControl>
@@ -128,7 +161,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
                 <FormItem>
                   <FormLabel className="text-[13px] font-semibold text-[#191C1E] tracking-wider uppercase">Teléfono (Opcional)</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ej. 3001234567" className="border-[#E0E3E5] focus-visible:ring-primary" {...field} />
+                    <Input type="tel" placeholder="Ej. 3001234567" className="border-[#E0E3E5] focus-visible:ring-primary" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -140,23 +173,23 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
                 type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
-                disabled={createMutation.isPending}
+                disabled={isSubmitting}
                 className="text-on-surface-variant hover:text-on-surface"
               >
                 Cancelar
               </Button>
               <Button
                 type="submit"
-                disabled={createMutation.isPending}
+                disabled={isSubmitting}
                 className="bg-primary text-on-primary hover:bg-primary/90"
               >
-                {createMutation.isPending ? (
+                {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Registrando...
+                    Guardando...
                   </>
                 ) : (
-                  'Registrar Cliente'
+                  'Guardar Cliente'
                 )}
               </Button>
             </div>
