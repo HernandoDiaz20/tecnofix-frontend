@@ -1,4 +1,4 @@
-import { apiClient } from '../client';
+import { apiClient } from '@/api/client';
 import type { Part, CreatePartRequest, UpdatePartRequest, AssignPartToWorkOrderRequest } from '@/types/parts';
 import type { PaginatedResponse } from '@/types/dashboard';
 
