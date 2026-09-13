@@ -2,17 +2,20 @@ import React from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Mail, Phone, Calendar, ClipboardList, Loader2 } from 'lucide-react';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { User, Mail, Phone, Calendar, ClipboardList } from 'lucide-react';
 import type { Customer } from '@/types/customers';
-import { useAdminCustomer, useCustomerWorkOrders } from '@/api/admin/customer-hooks';
+import { useCustomerWorkOrders } from '@/api/admin/customer-hooks';
+import { Badge } from '@/components/ui/badge';
 
 interface CustomerDetailProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  customer: Customer | null;
+  customer?: Customer;
 }
 
 export const CustomerDetail: React.FC<CustomerDetailProps> = ({
@@ -20,144 +23,118 @@ export const CustomerDetail: React.FC<CustomerDetailProps> = ({
   onOpenChange,
   customer,
 }) => {
-  // If we just use the list prop it's ok, but requirements say "ver detalle" endpoint.
-  // We fetch detailed info just in case backend adds more fields later.
-  const { data: customerDetails, isLoading: isLoadingCustomer } = useAdminCustomer(customer?.id || '');
-  const { data: workOrdersData, isLoading: isLoadingWorkOrders } = useCustomerWorkOrders(customer?.id || '');
+  const { data: workOrdersData, isLoading: isLoadingOrders } = useCustomerWorkOrders(
+    isOpen && customer ? customer.id : ''
+  );
 
-  const displayCustomer = customerDetails || customer;
+  if (!customer) return null;
 
-  if (!displayCustomer) return null;
-
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .substring(0, 2)
-      .toUpperCase();
-  };
-
-  const getStatusColor = (status: string) => {
+  const renderStatus = (status: string) => {
     switch (status) {
-      case 'ENTREGADO': return 'bg-success/10 text-success border-success/20';
-      case 'LISTO_PARA_ENTREGA': return 'bg-primary/10 text-primary border-primary/20';
-      case 'EN_REPARACION': return 'bg-tertiary/10 text-tertiary border-tertiary/20';
-      case 'ESPERANDO_REPUESTO': return 'bg-error/10 text-error border-error/20';
-      case 'EN_REVISION': return 'bg-warning/10 text-warning-dark border-warning/20';
-      case 'INGRESADO': return 'bg-surface-container-high text-on-surface border-outline-variant';
-      default: return 'bg-surface-container text-on-surface border-outline-variant';
+      case 'PENDIENTE':
+        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">Pendiente</Badge>;
+      case 'EN_PROGRESO':
+        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">En Progreso</Badge>;
+      case 'COMPLETADO':
+        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Completado</Badge>;
+      case 'CANCELADO':
+        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Cancelado</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
     }
-  };
-
-  const formatStatus = (status: string) => {
-    return status.replace(/_/g, ' ');
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[550px] p-0 overflow-hidden">
-        <div className="bg-surface-container-low p-6 border-b border-outline-variant flex items-start gap-4">
-          <div className="w-16 h-16 bg-primary-container text-on-primary-container rounded-full border border-primary/20 flex items-center justify-center shrink-0 text-xl font-medium">
-            {getInitials(displayCustomer.fullName)}
-          </div>
-          <div className="flex-1 mt-2">
-            <DialogTitle className="text-xl font-semibold text-on-surface">
-              {displayCustomer.fullName}
-            </DialogTitle>
-            <p className="text-sm text-on-surface-variant font-data-mono mt-1 text-[11px] uppercase tracking-wider">
-              ID: {displayCustomer.id.substring(0, 8)}...
-            </p>
-          </div>
-        </div>
+      <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-semibold flex items-center gap-2">
+            <User className="w-5 h-5 text-primary" />
+            Detalle del Cliente
+          </DialogTitle>
+        </DialogHeader>
 
-        <div className="p-6 space-y-8">
-          {isLoadingCustomer ? (
-            <div className="flex justify-center p-4"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-surface-container-lowest p-4 rounded-xl border border-outline-variant">
-              <div className="space-y-1">
-                <div className="flex items-center gap-1.5 text-on-surface-variant text-sm font-medium">
-                  <Mail className="w-4 h-4" /> Email
-                </div>
-                <p className="text-on-surface text-sm font-medium break-words">
-                  {displayCustomer.email || <span className="text-outline italic">No registrado</span>}
-                </p>
-              </div>
-              <div className="space-y-1">
-                <div className="flex items-center gap-1.5 text-on-surface-variant text-sm font-medium">
-                  <Phone className="w-4 h-4" /> Teléfono
-                </div>
-                <p className="text-on-surface text-sm font-medium">
-                  {displayCustomer.phone || <span className="text-outline italic">No registrado</span>}
-                </p>
-              </div>
-              <div className="space-y-1">
-                <div className="flex items-center gap-1.5 text-on-surface-variant text-sm font-medium">
-                  <Calendar className="w-4 h-4" /> Registro
-                </div>
-                <p className="text-on-surface text-sm font-medium">
-                  {new Date(displayCustomer.createdAt).toLocaleDateString()}
-                </p>
+        <div className="space-y-6 mt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <span className="text-xs font-medium text-on-surface-variant uppercase tracking-wider">
+                Nombre Completo
+              </span>
+              <div className="flex items-center gap-2 text-on-surface">
+                <span className="font-medium">{customer.fullName}</span>
               </div>
             </div>
-          )}
 
-          <div className="space-y-3">
-            <h4 className="text-sm font-semibold text-on-surface uppercase tracking-wider flex items-center gap-2">
+            <div className="space-y-1">
+              <span className="text-xs font-medium text-on-surface-variant uppercase tracking-wider">
+                Fecha de Registro
+              </span>
+              <div className="flex items-center gap-2 text-on-surface">
+                <Calendar className="w-4 h-4 text-primary" />
+                <span>{format(new Date(customer.createdAt), "d 'de' MMMM, yyyy", { locale: es })}</span>
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <span className="text-xs font-medium text-on-surface-variant uppercase tracking-wider">
+                Email
+              </span>
+              <div className="flex items-center gap-2 text-on-surface">
+                <Mail className="w-4 h-4 text-primary" />
+                <span>{customer.email || <span className="text-outline italic">No registrado</span>}</span>
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <span className="text-xs font-medium text-on-surface-variant uppercase tracking-wider">
+                Teléfono
+              </span>
+              <div className="flex items-center gap-2 text-on-surface">
+                <Phone className="w-4 h-4 text-primary" />
+                <span>{customer.phone || <span className="text-outline italic">No registrado</span>}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-outline-variant pt-6">
+            <h4 className="text-sm font-semibold flex items-center gap-2 mb-4 text-on-surface">
               <ClipboardList className="w-4 h-4 text-primary" />
-              Órdenes de Servicio Asociadas
+              Órdenes de Servicio
             </h4>
 
-            <div className="border border-outline-variant rounded-lg overflow-hidden bg-surface-container-lowest">
-              {isLoadingWorkOrders ? (
-                <div className="p-8 text-center flex flex-col items-center justify-center text-on-surface-variant">
-                  <Loader2 className="w-6 h-6 animate-spin mb-2 text-primary" />
-                  <p className="text-sm">Cargando órdenes...</p>
-                </div>
-              ) : !workOrdersData?.items || workOrdersData.items.length === 0 ? (
-                <div className="p-8 text-center flex flex-col items-center justify-center text-on-surface-variant">
-                  <ClipboardList className="w-8 h-8 text-outline mb-2" />
-                  <p className="text-sm font-medium">Este cliente no tiene órdenes de servicio.</p>
-                </div>
-              ) : (
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-surface-container-low border-b border-outline-variant">
-                      <th className="py-2.5 px-4 font-label-md text-xs text-on-surface-variant uppercase tracking-wider">No. Orden</th>
-                      <th className="py-2.5 px-4 font-label-md text-xs text-on-surface-variant uppercase tracking-wider text-right">Estado</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-outline-variant/50">
-                    {workOrdersData.items.map((order) => (
-                      <tr key={order.id} className="hover:bg-surface-container transition-colors">
-                        <td className="py-2.5 px-4">
-                          <span className="font-data-mono font-medium text-primary text-sm">
-                            {order.guide_number}
-                          </span>
-                        </td>
-                        <td className="py-2.5 px-4 text-right">
-                          <span className={`inline-block px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full border ${getStatusColor(order.current_status)}`}>
-                            {formatStatus(order.current_status)}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
+            {isLoadingOrders ? (
+              <div className="flex items-center justify-center py-6 text-on-surface-variant">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+              </div>
+            ) : workOrdersData?.items && workOrdersData.items.length > 0 ? (
+              <div className="space-y-2 max-h-[250px] overflow-y-auto pr-2">
+                {workOrdersData.items.map((order) => (
+                  <div 
+                    key={order.id} 
+                    className="flex items-center justify-between p-3 rounded-lg border border-outline-variant bg-surface-container-lowest"
+                  >
+                    <div>
+                      <div className="text-xs text-on-surface-variant uppercase tracking-wider font-semibold">
+                        N° de Guía
+                      </div>
+                      <div className="font-mono font-medium text-sm text-on-surface">
+                        {order.guide_number}
+                      </div>
+                    </div>
+                    <div>
+                      {renderStatus(order.current_status)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-6 border border-dashed border-outline-variant rounded-lg bg-surface-container-lowest">
+                <p className="text-sm text-on-surface-variant">
+                  El cliente no tiene órdenes de servicio registradas.
+                </p>
+              </div>
+            )}
           </div>
-        </div>
-
-        <div className="bg-surface-container-lowest p-4 border-t border-outline-variant flex justify-end">
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            className="text-on-surface-variant"
-          >
-            Cerrar
-          </Button>
         </div>
       </DialogContent>
     </Dialog>
