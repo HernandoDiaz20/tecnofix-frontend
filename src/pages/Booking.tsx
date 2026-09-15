@@ -1,12 +1,9 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import { useServices, useCreateAppointment } from '@/api/hooks';
+import { bookingSchema, type BookingFormValues } from '@/schemas/booking.schema';
+import { defaultServices } from '@/constants/services';
 import { 
-  Search, 
-  Smartphone, 
-  BatteryCharging, 
-  Sparkles, 
   CheckCircle,
   Clock,
   ChevronDown
@@ -14,62 +11,12 @@ import {
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
-const bookingSchema = z.object({
-  deviceType: z.string().min(1, 'Selecciona el tipo de dispositivo'),
-  brand: z.string().min(1, 'Indica la marca'),
-  model: z.string().min(1, 'Indica el modelo'),
-  serviceId: z.string().min(1, 'Selecciona un servicio'),
-  description: z.string().optional(),
-  date: z.string().min(1, 'Selecciona la fecha de visita'),
-  timeSlot: z.string().min(1, 'Selecciona un horario preferido'),
-  customerName: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
-  email: z.string().email('Ingresa un correo electrónico válido').optional().or(z.literal('')),
-  phone: z.string().min(10, 'El teléfono debe tener al menos 10 dígitos'),
-});
-
-type BookingFormValues = z.infer<typeof bookingSchema>;
-
 export const Booking = () => {
   const { data: rawServicesData } = useServices();
   const apiServices: any[] = Array.isArray(rawServicesData) 
     ? rawServicesData 
     : ((rawServicesData as any)?.items || (rawServicesData as any)?.services || []);
   const { mutate: createAppointment, isPending, isSuccess, isError, error } = useCreateAppointment();
-
-  const defaultServices = [
-    {
-      id: 'srv-1',
-      name: 'Diagnóstico Técnico',
-      duration: '1-2 horas',
-      price: 0,
-      priceLabel: '$0 COP',
-      icon: Search,
-    },
-    {
-      id: 'srv-2',
-      name: 'Cambio de Pantalla',
-      duration: '2-4 horas',
-      price: 250000,
-      priceLabel: 'Desde $250.000 COP',
-      icon: Smartphone,
-    },
-    {
-      id: 'srv-3',
-      name: 'Cambio de Batería',
-      duration: '1-2 horas',
-      price: 120000,
-      priceLabel: 'Desde $120.000 COP',
-      icon: BatteryCharging,
-    },
-    {
-      id: 'srv-4',
-      name: 'Mantenimiento Preventivo',
-      duration: '2-3 horas',
-      price: 85000,
-      priceLabel: '$85.000 COP',
-      icon: Sparkles,
-    },
-  ];
 
   const form = useForm<BookingFormValues>({
     resolver: zodResolver(bookingSchema),
