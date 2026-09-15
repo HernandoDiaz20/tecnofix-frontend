@@ -82,7 +82,7 @@ export const ProductDetail = () => {
       (customerNotes ? `📝 *Notas:* ${customerNotes}\n` : '') +
       `\nQuedo atento(a) a su confirmación de disponibilidad y método de pago.`;
 
-    const cleanPhone = '573001234567';
+    const cleanPhone = import.meta.env.VITE_WHATSAPP_NUMBER;
     const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
     setIsModalOpen(false);
