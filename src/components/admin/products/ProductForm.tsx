@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+
 import {
   Dialog,
   DialogContent,
@@ -28,24 +28,7 @@ import { useToast } from '@/hooks/use-toast';
 import { AxiosError } from 'axios';
 import type { ApiError } from '@/types';
 
-const productSchema = z.object({
-  sku: z.string().min(1, 'El SKU es obligatorio'),
-  name: z.string().min(1, 'El nombre es obligatorio'),
-  description: z.string().optional(),
-  imageUrl: z.string().url('Debe ser una URL válida').optional().or(z.literal('')),
-  brand: z.string().min(1, 'La marca es obligatoria'),
-  color: z.string().optional(),
-  specs: z.array(
-    z.object({
-      label: z.string().min(1, 'El label es obligatorio'),
-      value: z.string().min(1, 'El valor es obligatorio'),
-    })
-  ).optional(),
-  purchasePrice: z.coerce.number().min(0, 'El precio debe ser positivo'),
-  salePrice: z.coerce.number().min(0, 'El precio debe ser positivo'),
-  stock: z.coerce.number().int().min(0, 'El stock no puede ser negativo').optional(),
-});
-// type ProductFormValues = z.infer<typeof productSchema>;
+import { productSchema, type ProductFormValues } from '@/schemas/product.schema';
 
 interface ProductFormProps {
   isOpen: boolean;
@@ -65,8 +48,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   const updateMutation = useUpdateProduct();
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
-  const form = useForm<any>({
-    resolver: zodResolver(productSchema),
+  const form = useForm<ProductFormValues>({
+    resolver: zodResolver(productSchema) as any,
     defaultValues: {
       sku: '',
       name: '',
