@@ -1,358 +1,232 @@
 import React, { useState } from 'react';
-import { useServices, useCreateService, useUpdateService, useDeleteService } from '@/api/services';
-import type { TechService, CreateServiceInput } from '@/types';
-import { Search, Plus, Edit, Trash2, Clock, DollarSign, CheckCircle, XCircle, Wrench } from 'lucide-react';
+import { 
+  useAdminServices, 
+  useToggleServiceStatus, 
+  useDeactivateService 
+} from '@/api/admin/service-hooks';
+import { ServicesTable } from '@/components/admin/services/ServicesTable';
+import { ServiceForm } from '@/components/admin/services/ServiceForm';
+import { ConfirmDialog } from '@/components/admin/products/ConfirmDialog';
+import { Button } from '@/components/ui/button';
+import { Plus, Search, FilterX, AlertCircle, RefreshCw } from 'lucide-react';
+import type { Service } from '@/types/services';
+import { useToast } from '@/hooks/use-toast';
+import { AxiosError } from 'axios';
+import type { ApiError } from '@/types';
 
-export const AdminServices: React.FC = () => {
-  const { data: rawServices, isLoading, isError } = useServices();
-  const services: TechService[] = Array.isArray(rawServices)
-    ? rawServices
-    : (rawServices as any)?.items && Array.isArray((rawServices as any).items)
-    ? (rawServices as any).items
-    : [];
-  const createServiceMutation = useCreateService();
-  const updateServiceMutation = useUpdateService();
-  const deleteServiceMutation = useDeleteService();
+export const Services: React.FC = () => {
+  const { toast } = useToast();
+  const { data, isLoading, isError, error, refetch } = useAdminServices();
+  const toggleMutation = useToggleServiceStatus();
+  const deactivateMutation = useDeactivateService();
 
-  // Search & Filters
+  // Modals state
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isDeactivateOpen, setIsDeactivateOpen] = useState(false);
+
+  // Selected service
+  const [selectedService, setSelectedService] = useState<Service | null>(null);
+
+  // Filters state
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
 
-  // Modal State
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingService, setEditingService] = useState<TechService | null>(null);
-
-  // Form State
-  const [formData, setFormData] = useState<CreateServiceInput>({
-    name: '',
-    description: '',
-    estimatedPrice: 0,
-    estimatedTimeMinutes: 60,
-  });
-
-  const [formError, setFormError] = useState<string | null>(null);
-
-  const handleOpenCreateModal = () => {
-    setEditingService(null);
-    setFormData({
-      name: '',
-      description: '',
-      estimatedPrice: 0,
-      estimatedTimeMinutes: 60,
-    });
-    setFormError(null);
-    setIsModalOpen(true);
+  const handleCreate = () => {
+    setSelectedService(null);
+    setIsFormOpen(true);
   };
 
-  const handleOpenEditModal = (service: TechService) => {
-    setEditingService(service);
-    setFormData({
-      name: service.name,
-      description: service.description || '',
-      estimatedPrice: service.estimatedPrice ?? (service as any).price ?? 0,
-      estimatedTimeMinutes: service.estimatedTimeMinutes ?? 60,
-    });
-    setFormError(null);
-    setIsModalOpen(true);
+  const handleEdit = (service: Service) => {
+    setSelectedService(service);
+    setIsFormOpen(true);
   };
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setEditingService(null);
-    setFormError(null);
+  const handleDeactivateClick = (service: Service) => {
+    setSelectedService(service);
+    setIsDeactivateOpen(true);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.name.trim()) {
-      setFormError('El nombre del servicio es obligatorio');
-      return;
-    }
+  const confirmDeactivate = async () => {
+    if (!selectedService) return;
 
     try {
-      if (editingService) {
-        await updateServiceMutation.mutateAsync({
-          id: editingService.id,
-          data: formData,
-        });
-      } else {
-        await createServiceMutation.mutateAsync(formData);
+      await deactivateMutation.mutateAsync(selectedService.id);
+      toast({
+        title: 'Servicio desactivado',
+        description: `El servicio "${selectedService.name}" ha sido desactivado correctamente.`,
+      });
+      setIsDeactivateOpen(false);
+    } catch (err) {
+      let errorMessage = 'No se pudo desactivar el servicio.';
+      if (err instanceof AxiosError && err.response?.data) {
+        const apiError = err.response.data as ApiError;
+        errorMessage = apiError.error?.message || (err.response.data as any)?.message || errorMessage;
       }
-      handleCloseModal();
-    } catch (err: any) {
-      setFormError(err.response?.data?.error?.message || 'Ocurrió un error al guardar el servicio');
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+      setIsDeactivateOpen(false);
     }
   };
 
-  const handleDelete = async (id: string, name: string) => {
-    if (window.confirm(`¿Estás seguro de que deseas desactivar/eliminar el servicio "${name}"?`)) {
-      try {
-        await deleteServiceMutation.mutateAsync(id);
-      } catch (err: any) {
-        alert(err.response?.data?.error?.message || 'Error al eliminar servicio');
+  const handleActivateClick = async (service: Service) => {
+    try {
+      await toggleMutation.mutateAsync({
+        id: service.id,
+        data: { active: true },
+      });
+      toast({
+        title: 'Servicio activado',
+        description: `El servicio "${service.name}" está activo y visible en el catálogo público.`,
+      });
+    } catch (err) {
+      let errorMessage = 'No se pudo activar el servicio.';
+      if (err instanceof AxiosError && err.response?.data) {
+        const apiError = err.response.data as ApiError;
+        errorMessage = apiError.error?.message || (err.response.data as any)?.message || errorMessage;
       }
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
+      });
     }
   };
 
-  // Derived & Filtered List
-  const filteredServices = services.filter((s) => {
+  // Filter items in memory
+  const rawServices = data?.items || [];
+  const filteredServices = rawServices.filter((s) => {
     const matchesSearch =
       s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (s.description && s.description.toLowerCase().includes(searchTerm.toLowerCase()));
+      (s.description?.toLowerCase() || '').includes(searchTerm.toLowerCase());
 
     const matchesStatus =
       statusFilter === 'all'
         ? true
         : statusFilter === 'active'
-        ? s.active !== false
-        : s.active === false;
+        ? s.active
+        : !s.active;
 
     return matchesSearch && matchesStatus;
   });
 
   return (
-    <div className="flex-1 flex flex-col gap-6 max-w-[1440px] mx-auto w-full">
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div className="space-y-6 max-w-[1440px] mx-auto w-full">
+      {/* Page Header & Global Actions */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-on-surface flex items-center gap-2">
-            <Wrench className="w-6 h-6 text-primary" />
-            Gestión de Servicios Técnicos
-          </h2>
+          <h1 className="text-2xl font-bold text-on-background tracking-tight">Servicios</h1>
           <p className="text-sm text-on-surface-variant mt-1">
-            Administra el catálogo de servicios de mantenimiento y reparación ofrecidos por el taller.
+            Gestión del catálogo de servicios técnicos y tarifas oficiales
           </p>
         </div>
-        <button
-          onClick={handleOpenCreateModal}
-          className="bg-primary text-white hover:bg-primary/90 font-semibold px-4 py-2.5 rounded-xl flex items-center gap-2 shadow-sm transition-all"
+        <Button
+          onClick={handleCreate}
+          className="bg-primary text-on-primary hover:bg-primary/90 shadow-sm"
         >
-          <Plus className="w-5 h-5" />
-          Nuevo Servicio
-        </button>
+          <Plus className="w-4 h-4 mr-2" />
+          Nuevo servicio
+        </Button>
       </div>
 
-      {/* Search & Filters */}
-      <div className="bg-surface border border-outline-variant rounded-2xl p-4 flex flex-col md:flex-row gap-4 items-center shadow-sm">
-        <div className="relative flex-1 w-full">
-          <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" />
+      {/* Filter and Search Bar */}
+      <div className="bg-surface border border-outline-variant rounded-xl p-4 flex flex-col md:flex-row gap-4 justify-between items-stretch md:items-center shadow-sm">
+        <div className="relative flex-1 max-w-md">
+          <Search className="w-4 h-4 text-on-surface-variant absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            className="w-full bg-surface-container-lowest border border-outline-variant rounded-xl py-2.5 pl-10 pr-4 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
             placeholder="Buscar por nombre o descripción..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 border border-outline-variant rounded-lg text-sm bg-background text-on-surface focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
           />
         </div>
 
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <select
-            className="bg-surface-container-lowest border border-outline-variant rounded-xl py-2.5 px-4 text-sm focus:border-primary outline-none cursor-pointer"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as any)}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-on-surface-variant uppercase tracking-wider">
+              Estado:
+            </span>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as any)}
+              className="border border-outline-variant rounded-lg px-3 py-1.5 text-sm bg-background text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="all">Todos ({rawServices.length})</option>
+              <option value="active">
+                Activos ({rawServices.filter((s) => s.active).length})
+              </option>
+              <option value="inactive">
+                Inactivos ({rawServices.filter((s) => !s.active).length})
+              </option>
+            </select>
+          </div>
+
+          {(searchTerm || statusFilter !== 'all') && (
+            <button
+              onClick={() => {
+                setSearchTerm('');
+                setStatusFilter('all');
+              }}
+              className="text-xs text-primary hover:underline flex items-center gap-1 font-medium px-2 py-1"
+            >
+              <FilterX className="w-3.5 h-3.5" />
+              Limpiar filtros
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      {isError ? (
+        <div className="bg-surface border border-error/20 rounded-xl p-10 text-center shadow-sm flex flex-col items-center justify-center space-y-3">
+          <div className="w-12 h-12 rounded-full bg-error-container text-error flex items-center justify-center">
+            <AlertCircle className="w-6 h-6" />
+          </div>
+          <h3 className="text-lg font-semibold text-on-surface">Error al cargar servicios</h3>
+          <p className="text-sm text-on-surface-variant max-w-md">
+            {(error as any)?.message || 'No fue posible obtener el listado de servicios del servidor.'}
+          </p>
+          <Button
+            variant="outline"
+            onClick={() => refetch()}
+            className="mt-2 text-primary border-primary/20 hover:bg-primary/10"
           >
-            <option value="all">Todos los Estados</option>
-            <option value="active">Activos</option>
-            <option value="inactive">Inactivos</option>
-          </select>
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Reintentar
+          </Button>
         </div>
-      </div>
-
-      {/* Table / List */}
-      <div className="bg-surface border border-outline-variant rounded-2xl shadow-sm overflow-hidden">
-        {isLoading ? (
-          <div className="p-12 text-center text-on-surface-variant font-medium">
-            Cargando servicios técnicos...
-          </div>
-        ) : isError ? (
-          <div className="p-12 text-center text-error font-medium">
-            Error al cargar los servicios técnicos del servidor.
-          </div>
-        ) : filteredServices.length === 0 ? (
-          <div className="p-12 text-center text-on-surface-variant">
-            No se encontraron servicios que coincidan con la búsqueda.
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-surface-container-low border-b border-outline-variant text-xs uppercase font-bold text-on-surface-variant tracking-wider">
-                  <th className="py-3.5 px-6">Servicio</th>
-                  <th className="py-3.5 px-6">Precio Estimado</th>
-                  <th className="py-3.5 px-6">Tiempo Estimado</th>
-                  <th className="py-3.5 px-6">Estado</th>
-                  <th className="py-3.5 px-6 text-right">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-outline-variant text-sm">
-                {filteredServices.map((service) => {
-                  const price = service.estimatedPrice ?? (service as any).price ?? 0;
-                  const minutes = service.estimatedTimeMinutes ?? 60;
-                  const isActive = service.active !== false;
-
-                  return (
-                    <tr key={service.id} className="hover:bg-surface-container-low/50 transition-colors">
-                      <td className="py-4 px-6 max-w-xs">
-                        <div className="font-bold text-on-surface">{service.name}</div>
-                        <div className="text-xs text-on-surface-variant line-clamp-2 mt-0.5">
-                          {service.description || 'Sin descripción'}
-                        </div>
-                      </td>
-                      <td className="py-4 px-6 font-semibold text-primary">
-                        {price === 0 ? 'Gratis ($0)' : `$${price.toLocaleString('es-CO')} COP`}
-                      </td>
-                      <td className="py-4 px-6 text-on-surface-variant">
-                        <div className="inline-flex items-center gap-1 bg-surface-container-high px-2.5 py-1 rounded-lg text-xs font-medium">
-                          <Clock className="w-3.5 h-3.5" />
-                          {minutes} min ({Math.round((minutes / 60) * 10) / 10}h)
-                        </div>
-                      </td>
-                      <td className="py-4 px-6">
-                        {isActive ? (
-                          <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 px-2.5 py-1 rounded-full text-xs font-semibold">
-                            <CheckCircle className="w-3.5 h-3.5" /> Activo
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 px-2.5 py-1 rounded-full text-xs font-semibold">
-                            <XCircle className="w-3.5 h-3.5" /> Inactivo
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-4 px-6 text-right space-x-2">
-                        <button
-                          onClick={() => handleOpenEditModal(service)}
-                          className="p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-lg transition-colors"
-                          title="Editar servicio"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(service.id, service.name)}
-                          className="p-2 text-on-surface-variant hover:text-error hover:bg-error-container/30 rounded-lg transition-colors"
-                          title="Desactivar/Eliminar"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {/* Modal Crear / Editar */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-surface border border-outline-variant w-full max-w-lg rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="p-6 border-b border-outline-variant flex justify-between items-center bg-surface-container-low">
-              <h3 className="text-lg font-bold text-on-surface">
-                {editingService ? 'Editar Servicio Técnico' : 'Nuevo Servicio Técnico'}
-              </h3>
-              <button
-                onClick={handleCloseModal}
-                className="text-on-surface-variant hover:text-on-surface p-1 rounded-lg"
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              {formError && (
-                <div className="p-3 bg-error-container text-error text-xs rounded-xl font-medium">
-                  {formError}
-                </div>
-              )}
-
-              <div>
-                <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">
-                  Nombre del Servicio *
-                </label>
-                <input
-                  type="text"
-                  required
-                  className="w-full bg-surface-container-lowest border border-outline-variant rounded-xl p-3 text-sm focus:border-primary outline-none"
-                  placeholder="Ej: Cambio de Pantalla iPhone 13"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">
-                  Descripción
-                </label>
-                <textarea
-                  rows={3}
-                  className="w-full bg-surface-container-lowest border border-outline-variant rounded-xl p-3 text-sm focus:border-primary outline-none"
-                  placeholder="Detalles sobre el procedimiento, componentes que incluye..."
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">
-                    Precio Estimado ($ COP) *
-                  </label>
-                  <div className="relative">
-                    <DollarSign className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" />
-                    <input
-                      type="number"
-                      min={0}
-                      required
-                      className="w-full bg-surface-container-lowest border border-outline-variant rounded-xl py-3 pl-9 pr-3 text-sm focus:border-primary outline-none"
-                      value={formData.estimatedPrice}
-                      onChange={(e) => setFormData({ ...formData, estimatedPrice: Number(e.target.value) })}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">
-                    Tiempo Estimado (Minutos) *
-                  </label>
-                  <div className="relative">
-                    <Clock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" />
-                    <input
-                      type="number"
-                      min={5}
-                      required
-                      className="w-full bg-surface-container-lowest border border-outline-variant rounded-xl py-3 pl-9 pr-3 text-sm focus:border-primary outline-none"
-                      value={formData.estimatedTimeMinutes}
-                      onChange={(e) => setFormData({ ...formData, estimatedTimeMinutes: Number(e.target.value) })}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-4 flex justify-end gap-3 border-t border-outline-variant">
-                <button
-                  type="button"
-                  onClick={handleCloseModal}
-                  className="px-4 py-2.5 rounded-xl border border-outline-variant text-sm font-semibold text-on-surface hover:bg-surface-container transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={createServiceMutation.isPending || updateServiceMutation.isPending}
-                  className="px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-all shadow-sm disabled:opacity-50"
-                >
-                  {createServiceMutation.isPending || updateServiceMutation.isPending
-                    ? 'Guardando...'
-                    : editingService
-                    ? 'Guardar Cambios'
-                    : 'Crear Servicio'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+      ) : (
+        <ServicesTable
+          services={filteredServices}
+          isLoading={isLoading}
+          onEdit={handleEdit}
+          onDeactivate={handleDeactivateClick}
+          onActivate={handleActivateClick}
+        />
       )}
+
+      {/* Create / Edit Modal */}
+      <ServiceForm
+        isOpen={isFormOpen}
+        onOpenChange={setIsFormOpen}
+        service={selectedService}
+      />
+
+      {/* Deactivate Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={isDeactivateOpen}
+        onOpenChange={setIsDeactivateOpen}
+        title="Desactivar Servicio"
+        description={`¿Estás seguro de que deseas desactivar el servicio "${selectedService?.name}"? Dejará de mostrarse en el catálogo público y no podrá ser solicitado por clientes hasta que sea reactivado.`}
+        confirmText="Desactivar"
+        cancelText="Cancelar"
+        variant="destructive"
+        onConfirm={confirmDeactivate}
+        isLoading={deactivateMutation.isPending}
+      />
     </div>
   );
 };

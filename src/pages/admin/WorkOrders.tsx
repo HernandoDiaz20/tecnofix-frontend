@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAdminWorkOrders } from '@/api/admin-hooks';
+import { useAdminTechnicians } from '@/api/admin/technician-hooks';
+import { AssignTechnicianDialog } from '@/components/admin/work-orders/AssignTechnicianDialog';
 import type { DashboardWorkOrder } from '@/types/dashboard';
 
 export const WorkOrders: React.FC = () => {
@@ -12,9 +14,26 @@ export const WorkOrders: React.FC = () => {
   const navigate = useNavigate();
   
   const { data, isLoading, isError } = useAdminWorkOrders(page, pageSize, statusFilter, technicianFilter);
+  const { data: techData } = useAdminTechnicians();
+  const technicians = techData?.items || [];
+
+  // Dropdown menu & dialog state
+  const [menuOpenOrderId, setMenuOpenOrderId] = useState<string | null>(null);
+  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState<boolean>(false);
+  const [selectedOrderForAssign, setSelectedOrderForAssign] = useState<DashboardWorkOrder | null>(null);
+
+  const getTechnicianName = (technicianId: string | null) => {
+    if (!technicianId) return 'No asignado';
+    const tech = technicians.find((t) => t.id === technicianId);
+    return tech ? tech.fullName : technicianId;
+  };
 
   const getStatusBadge = (status: DashboardWorkOrder['currentStatus']) => {
     switch (status) {
+      case 'PENDIENTE':
+        return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-surface-container-highest text-on-surface">Pendiente</span>;
+      case 'ACEPTADA':
+        return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-container text-on-primary-container">Aceptada</span>;
       case 'INGRESADO':
       case 'EN_REVISION':
         return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-container text-on-primary-container">En Diagnóstico</span>;
@@ -34,6 +53,11 @@ export const WorkOrders: React.FC = () => {
   const formatDate = (dateString: string) => {
     const d = new Date(dateString);
     return d.toLocaleDateString('es-ES', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  const handleOpenAssign = (order: DashboardWorkOrder) => {
+    setSelectedOrderForAssign(order);
+    setIsAssignDialogOpen(true);
   };
 
   return (
@@ -58,6 +82,8 @@ export const WorkOrders: React.FC = () => {
               className="px-3 py-1.5 border border-outline-variant rounded-md text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none bg-surface"
             >
               <option value="">Todos</option>
+              <option value="PENDIENTE">Pendiente</option>
+              <option value="ACEPTADA">Aceptada</option>
               <option value="INGRESADO">Ingresado</option>
               <option value="EN_REVISION">En Revisión</option>
               <option value="ESPERANDO_REPUESTO">Esperando Repuesto</option>
@@ -69,14 +95,19 @@ export const WorkOrders: React.FC = () => {
           </div>
           
           <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-on-surface-variant">Técnico ID:</label>
-            <input 
-              type="text" 
-              placeholder="Ej: uuid..."
+            <label className="text-sm font-medium text-on-surface-variant">Técnico:</label>
+            <select
               value={technicianFilter}
               onChange={(e) => { setTechnicianFilter(e.target.value); setPage(1); }}
               className="px-3 py-1.5 border border-outline-variant rounded-md text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none bg-surface"
-            />
+            >
+              <option value="">Todos los técnicos</option>
+              {technicians.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.fullName}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
@@ -129,13 +160,51 @@ export const WorkOrders: React.FC = () => {
                     <td className="py-3 px-6 font-medium text-on-surface">{order.guideNumber}</td>
                     <td className="py-3 px-6">{order.customer?.fullName || 'Cliente no asignado'}</td>
                     <td className="py-3 px-6 text-on-surface-variant">{order.deviceBrand} {order.deviceModel}</td>
-                    <td className="py-3 px-6 text-on-surface-variant">{order.technicianId || 'No asignado'}</td>
+                    <td className="py-3 px-6 text-on-surface-variant font-medium">
+                      {getTechnicianName(order.technicianId)}
+                    </td>
                     <td className="py-3 px-6">{getStatusBadge(order.currentStatus)}</td>
                     <td className="py-3 px-6 text-on-surface-variant">{formatDate(order.createdAt)}</td>
-                    <td className="py-3 px-6 text-right">
-                      <button className="text-outline hover:text-primary transition-colors">
+                    <td className="py-3 px-6 text-right relative" onClick={(e) => e.stopPropagation()}>
+                      <button 
+                        onClick={() => setMenuOpenOrderId(menuOpenOrderId === order.id ? null : order.id)}
+                        className="p-1.5 rounded-lg text-outline hover:text-primary hover:bg-surface-container transition-colors"
+                        title="Acciones"
+                        aria-label={`Acciones de orden ${order.guideNumber}`}
+                      >
                         <span className="material-symbols-outlined text-sm">more_vert</span>
                       </button>
+
+                      {menuOpenOrderId === order.id && (
+                        <>
+                          <div 
+                            className="fixed inset-0 z-20" 
+                            onClick={() => setMenuOpenOrderId(null)} 
+                          />
+                          <div className="absolute right-6 top-10 z-30 w-48 bg-surface border border-outline-variant rounded-xl shadow-lg py-1.5 text-left text-sm animate-in fade-in zoom-in-95 duration-100">
+                            <button
+                              onClick={() => {
+                                setMenuOpenOrderId(null);
+                                handleOpenAssign(order);
+                              }}
+                              className="w-full px-4 py-2.5 flex items-center gap-2.5 text-on-surface hover:bg-surface-container-high transition-colors"
+                            >
+                              <span className="material-symbols-outlined text-base text-primary">engineering</span>
+                              <span>Asignar técnico</span>
+                            </button>
+                            <button
+                              onClick={() => {
+                                setMenuOpenOrderId(null);
+                                navigate(`/admin/ordenes-servicio/${order.id}`);
+                              }}
+                              className="w-full px-4 py-2.5 flex items-center gap-2.5 text-on-surface hover:bg-surface-container-high transition-colors"
+                            >
+                              <span className="material-symbols-outlined text-base text-on-surface-variant">visibility</span>
+                              <span>Ver detalle</span>
+                            </button>
+                          </div>
+                        </>
+                      )}
                     </td>
                   </tr>
                 ))
@@ -169,6 +238,13 @@ export const WorkOrders: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Assign Technician Modal */}
+      <AssignTechnicianDialog
+        isOpen={isAssignDialogOpen}
+        onOpenChange={setIsAssignDialogOpen}
+        order={selectedOrderForAssign}
+      />
     </>
   );
 };

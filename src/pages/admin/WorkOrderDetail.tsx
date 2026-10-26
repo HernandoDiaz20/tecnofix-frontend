@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   useAdminWorkOrderDetail,
   useAdminWorkOrderHistory,
   useAdminWorkOrderDiagnostics
 } from '@/api/admin-hooks';
+import { useAdminTechnicians } from '@/api/admin/technician-hooks';
+import { AssignTechnicianDialog } from '@/components/admin/work-orders/AssignTechnicianDialog';
 
 const STATUS_FLOW = [
   'INGRESADO',
@@ -32,6 +34,10 @@ export const WorkOrderDetail: React.FC = () => {
   const { data: order, isLoading: loadingOrder, isError: errorOrder } = useAdminWorkOrderDetail(id);
   const { data: history, isLoading: loadingHistory, isError: errorHistory } = useAdminWorkOrderHistory(id);
   const { data: diagnostics, isLoading: loadingDiagnostics, isError: errorDiagnostics } = useAdminWorkOrderDiagnostics(id);
+  const { data: techData } = useAdminTechnicians();
+  const technicians = techData?.items || [];
+
+  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState<boolean>(false);
 
   if (loadingOrder) {
     return (
@@ -54,6 +60,8 @@ export const WorkOrderDetail: React.FC = () => {
   }
 
   const currentStatusIndex = STATUS_FLOW.indexOf(order.currentStatus);
+  const assignedTech = technicians.find((t) => t.id === order.technicianId);
+  const technicianDisplayName = order.technician?.fullName || assignedTech?.fullName || (order.technicianId ? order.technicianId : 'No asignado');
 
   return (
     <div className="flex flex-col gap-6">
@@ -79,6 +87,14 @@ export const WorkOrderDetail: React.FC = () => {
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={() => setIsAssignDialogOpen(true)}
+            className="px-4 py-2 border border-outline-variant rounded-lg text-sm font-semibold hover:bg-surface-container transition-colors flex items-center gap-2 text-on-surface"
+          >
+            <span className="material-symbols-outlined text-sm">engineering</span>
+            {order.technicianId ? 'Cambiar Técnico' : 'Asignar Técnico'}
+          </button>
           <button className="px-4 py-2 border border-outline-variant rounded-lg text-sm font-semibold hover:bg-surface-container transition-colors flex items-center gap-2">
             <span className="material-symbols-outlined text-sm">inventory_2</span> Agregar Repuesto
           </button>
@@ -125,9 +141,22 @@ export const WorkOrderDetail: React.FC = () => {
               <span className="text-on-surface-variant text-sm font-medium">Cliente</span>
               <span className="text-on-surface text-sm font-medium text-right">{order.customer?.fullName || 'No asignado'}</span>
             </div>
-            <div className="flex justify-between border-b border-outline-variant/30 pb-2">
+            <div className="flex justify-between items-center border-b border-outline-variant/30 pb-2">
               <span className="text-on-surface-variant text-sm font-medium">Técnico Asignado</span>
-              <span className="text-on-surface text-sm font-medium text-right">{order.technicianId || 'No asignado'}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-on-surface text-sm font-medium text-right">
+                  {technicianDisplayName}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsAssignDialogOpen(true)}
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors bg-primary-container/30 hover:bg-primary-container/50 px-2 py-0.5 rounded"
+                  title={order.technicianId ? 'Cambiar técnico asignado' : 'Asignar técnico'}
+                >
+                  <span className="material-symbols-outlined text-xs">edit</span>
+                  {order.technicianId ? 'Cambiar' : 'Asignar'}
+                </button>
+              </div>
             </div>
             <div className="flex justify-between border-b border-outline-variant/30 pb-2">
               <span className="text-on-surface-variant text-sm font-medium">Dispositivo</span>
@@ -251,6 +280,12 @@ export const WorkOrderDetail: React.FC = () => {
         </div>
 
       </div>
+
+      <AssignTechnicianDialog
+        isOpen={isAssignDialogOpen}
+        onOpenChange={setIsAssignDialogOpen}
+        order={order}
+      />
     </div>
   );
 };

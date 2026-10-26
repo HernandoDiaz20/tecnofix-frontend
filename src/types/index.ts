@@ -20,6 +20,14 @@ export interface Product {
   available: boolean;
 }
 
+export type { 
+  Service, 
+  ServicesResponse, 
+  CreateServiceRequest, 
+  UpdateServiceRequest, 
+  ToggleServiceStatusRequest 
+} from './services';
+
 export interface TechService {
   id: string;
   name: string;
@@ -29,9 +37,6 @@ export interface TechService {
   active: boolean;
   createdAt?: string;
 }
-
-// Alias para compatibilidad
-export type Service = TechService;
 
 export interface CreateServiceInput {
   name: string;

@@ -1,100 +1,21 @@
 import { Link } from 'react-router-dom';
 import { 
-  Search, 
-  Smartphone, 
-  BatteryCharging, 
-  Sparkles, 
-  Cpu, 
   ShieldCheck, 
-  Clock, 
-  CheckCircle2,
-  Calendar
+  Calendar,
+  Wrench,
+  AlertCircle,
+  RefreshCw
 } from 'lucide-react';
 import { useServices } from '@/api/hooks';
+import type { Service } from '@/types/services';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export const Services = () => {
-  const { data: apiServices } = useServices();
+  const { data, isLoading, isError, error, refetch } = useServices();
 
-  const defaultServices = [
-    {
-      id: 'srv-1',
-      name: 'Diagnóstico Experto de Hardware y Software',
-      price: 0,
-      priceLabel: '$0 COP (Gratis con reparación)',
-      duration: '1 - 2 horas',
-      description: 'Revisión exhaustiva con instrumental de precisión para detectar cortocircuitos, fallas en placa base y problemas de software.',
-      icon: Search,
-      benefits: ['Informe técnico por escrito', 'Sin compromiso inicial', 'Revisión en microscopio']
-    },
-    {
-      id: 'srv-2',
-      name: 'Cambio de Pantalla y Módulo Táctil',
-      price: 250000,
-      priceLabel: 'Desde $250.000 COP',
-      duration: '2 - 4 horas',
-      description: 'Reemplazo con repuestos originales (OEM) o calidades certificadas (OLED / Incell). Calibración de TrueTone y sensor de proximidad.',
-      icon: Smartphone,
-      benefits: ['Pantallas 100% probadas', 'Sellado contra polvo y salpicaduras', '6 meses de garantía']
-    },
-    {
-      id: 'srv-3',
-      name: 'Cambio y Reemplazo de Batería',
-      price: 120000,
-      priceLabel: 'Desde $120.000 COP',
-      duration: '1 - 2 horas',
-      description: 'Sustitución con celdas de alta densidad que recuperan el 100% de la condición original sin mensajes de error.',
-      icon: BatteryCharging,
-      benefits: ['Salud de batería al 100%', 'Cero sobrecalentamiento', 'Certificación de seguridad']
-    },
-    {
-      id: 'srv-4',
-      name: 'Mantenimiento Preventivo y Limpieza',
-      price: 85000,
-      priceLabel: '$85.000 COP',
-      duration: '2 - 3 horas',
-      description: 'Limpieza ultrasónica, sopleteado de polvo interno, cambio de pasta térmica de alto rendimiento y lubricación de ventiladores.',
-      icon: Sparkles,
-      benefits: ['Reducción de temperatura', 'Mayor vida útil de chips', 'Optimización de rendimiento']
-    },
-    {
-      id: 'srv-5',
-      name: 'Reparación de Placa Base y Microsoldadura',
-      price: 180000,
-      priceLabel: 'Desde $180.000 COP',
-      duration: '24 - 48 horas',
-      description: 'Reparación de circuitos integrados (IC de carga, Touch IC, Audio IC), reconstrucción de pistas y líneas en corto.',
-      icon: Cpu,
-      benefits: ['Técnicos certificados', 'Microscopios de alta definición', 'Garantía extendida']
-    },
-    {
-      id: 'srv-6',
-      name: 'Soluciones y Recuperación de Software',
-      price: 70000,
-      priceLabel: 'Desde $70.000 COP',
-      duration: '1 - 3 horas',
-      description: 'Flasheo de sistemas operativos (iOS, Android, Windows, macOS), recuperación de datos eliminados y desinfección total.',
-      icon: ShieldCheck,
-      benefits: ['Respaldo seguro de datos', 'Instalación limpia', 'Eliminación de malware']
-    },
-  ];
-
-  const servicesList = apiServices && apiServices.length > 0 
-    ? apiServices.map((s, idx) => {
-        const price = s.estimatedPrice ?? (s as any).price ?? 0;
-        const durationMins = s.estimatedTimeMinutes;
-        const durationStr = durationMins ? `${durationMins} min` : '1 - 3 horas';
-        return {
-          id: s.id,
-          name: s.name,
-          price: price,
-          priceLabel: price === 0 ? '$0 COP (Gratis)' : `Desde $${price.toLocaleString('es-CO')} COP`,
-          duration: durationStr,
-          description: s.description || 'Servicio técnico especializado con componentes originales y garantía escrita.',
-          icon: defaultServices[idx % defaultServices.length].icon,
-          benefits: defaultServices[idx % defaultServices.length].benefits
-        };
-      })
-    : defaultServices;
+  const services: Service[] = Array.isArray(data) 
+    ? data 
+    : ((data as any)?.items || []);
 
   return (
     <div className="max-w-container-max mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
@@ -108,15 +29,87 @@ export const Services = () => {
           Servicios Técnicos Especializados
         </h1>
         <p className="text-base sm:text-lg text-[#434655]">
-          Diagnóstico y reparación de alta precisión para smartphones, tablets y ordenadores con repuestos originales y garantía certificada.
+          Diagnóstico y reparación de alta precisión para smartphones, tablets y ordenadores con repuestos de calidad y garantía técnica certificada.
         </p>
       </div>
 
+      {/* Loading State */}
+      {isLoading && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <div
+              key={index}
+              className="bg-white rounded-2xl shadow-sm border border-[#E0E3E5] p-7 flex flex-col justify-between"
+            >
+              <div>
+                <div className="flex justify-between items-start mb-5">
+                  <Skeleton className="w-14 h-14 rounded-2xl bg-slate-100" />
+                </div>
+                <Skeleton className="h-6 w-3/4 mb-3 bg-slate-100" />
+                <Skeleton className="h-4 w-full mb-2 bg-slate-100" />
+                <Skeleton className="h-4 w-5/6 mb-6 bg-slate-100" />
+              </div>
+
+              <div>
+                <div className="pt-4 border-t border-[#E0E3E5] mb-5">
+                  <Skeleton className="h-3 w-20 mb-2 bg-slate-100" />
+                  <Skeleton className="h-7 w-32 bg-slate-100" />
+                </div>
+                <Skeleton className="h-11 w-full rounded-xl bg-slate-100" />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Error State */}
+      {isError && (
+        <div className="bg-white rounded-2xl border border-red-200 p-10 text-center max-w-xl mx-auto shadow-sm">
+          <div className="w-14 h-14 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="w-7 h-7" />
+          </div>
+          <h2 className="text-xl font-bold text-[#191C1E] mb-2">
+            No se pudieron cargar los servicios
+          </h2>
+          <p className="text-sm text-[#434655] mb-6">
+            {(error as any)?.message || 'Ocurrió un error al conectar con el catálogo de servicios. Por favor, intenta nuevamente.'}
+          </p>
+          <button
+            onClick={() => refetch()}
+            className="inline-flex items-center gap-2 bg-primary hover:bg-[#003EA8] text-white text-sm font-semibold px-6 py-2.5 rounded-xl transition-all shadow-sm"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Reintentar
+          </button>
+        </div>
+      )}
+
+      {/* Empty State */}
+      {!isLoading && !isError && services.length === 0 && (
+        <div className="bg-white rounded-2xl border border-[#E0E3E5] p-12 text-center max-w-xl mx-auto shadow-sm">
+          <div className="w-16 h-16 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-4">
+            <Wrench className="w-8 h-8" />
+          </div>
+          <h2 className="text-2xl font-bold text-[#191C1E] mb-2">
+            No hay servicios disponibles
+          </h2>
+          <p className="text-sm sm:text-base text-[#434655] mb-6">
+            Actualmente no contamos con servicios activos en el catálogo público. Por favor, consulta más tarde o contáctanos directamente para asistencia técnica.
+          </p>
+          <Link
+            to="/agendar"
+            className="inline-flex items-center gap-2 bg-primary hover:bg-[#003EA8] text-white text-sm font-semibold px-6 py-2.5 rounded-xl transition-all shadow-sm"
+          >
+            <Calendar className="w-4 h-4" />
+            Agendar Consulta
+          </Link>
+        </div>
+      )}
+
       {/* Services Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {servicesList.map((service) => {
-          const Icon = service.icon;
-          return (
+      {!isLoading && !isError && services.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {services.map((service) => (
             <div
               key={service.id}
               className="bg-white rounded-2xl shadow-sm border border-[#E0E3E5] p-7 flex flex-col justify-between hover:border-primary hover:shadow-md transition-all group"
@@ -124,40 +117,31 @@ export const Services = () => {
               <div>
                 <div className="flex justify-between items-start mb-5">
                   <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors">
-                    <Icon className="w-7 h-7" />
+                    <Wrench className="w-7 h-7" />
                   </div>
-                  <span className="text-xs text-[#737686] flex items-center gap-1 font-medium bg-[#F2F4F6] px-2.5 py-1 rounded-lg">
-                    <Clock className="w-3.5 h-3.5" /> {service.duration}
-                  </span>
                 </div>
 
                 <h3 className="text-xl font-bold text-[#191C1E] mb-2.5">
                   {service.name}
                 </h3>
                 <p className="text-sm text-[#434655] leading-relaxed mb-6">
-                  {service.description}
+                  {service.description?.trim()
+                    ? service.description
+                    : 'Servicio técnico especializado con componentes de alta calidad y garantía escrita.'}
                 </p>
-
-                <div className="space-y-2 mb-6 pt-4 border-t border-[#E0E3E5]">
-                  {service.benefits.map((b, i) => (
-                    <div key={i} className="flex items-center gap-2 text-xs font-medium text-[#191C1E]">
-                      <CheckCircle2 className="w-4 h-4 text-[#16A34A] flex-shrink-0" />
-                      <span>{b}</span>
-                    </div>
-                  ))}
-                </div>
               </div>
 
               <div>
                 <div className="pt-4 border-t border-[#E0E3E5] mb-5">
                   <p className="text-xs text-[#737686]">Precio estimado</p>
                   <p className="text-xl font-black text-primary">
-                    {service.priceLabel}
+                    ${Number(service.price).toLocaleString('es-CO')} COP
                   </p>
                 </div>
 
                 <Link
                   to="/agendar"
+                  state={{ serviceId: service.id }}
                   className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-[#003EA8] text-white text-sm font-bold py-3 rounded-xl shadow-sm transition-all"
                 >
                   <Calendar className="w-4 h-4" />
@@ -165,9 +149,9 @@ export const Services = () => {
                 </Link>
               </div>
             </div>
-          );
-        })}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
