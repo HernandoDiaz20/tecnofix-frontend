@@ -79,16 +79,21 @@ export const Services = () => {
   ];
 
   const servicesList = apiServices && apiServices.length > 0 
-    ? apiServices.map((s, idx) => ({
-        id: s.id,
-        name: s.name,
-        price: s.price,
-        priceLabel: `Desde $${s.price.toLocaleString('es-CO')} COP`,
-        duration: '1 - 3 horas',
-        description: s.description || 'Servicio técnico especializado con componentes originales y garantía escrita.',
-        icon: defaultServices[idx % defaultServices.length].icon,
-        benefits: defaultServices[idx % defaultServices.length].benefits
-      }))
+    ? apiServices.map((s, idx) => {
+        const price = s.estimatedPrice ?? (s as any).price ?? 0;
+        const durationMins = s.estimatedTimeMinutes;
+        const durationStr = durationMins ? `${durationMins} min` : '1 - 3 horas';
+        return {
+          id: s.id,
+          name: s.name,
+          price: price,
+          priceLabel: price === 0 ? '$0 COP (Gratis)' : `Desde $${price.toLocaleString('es-CO')} COP`,
+          duration: durationStr,
+          description: s.description || 'Servicio técnico especializado con componentes originales y garantía escrita.',
+          icon: defaultServices[idx % defaultServices.length].icon,
+          benefits: defaultServices[idx % defaultServices.length].benefits
+        };
+      })
     : defaultServices;
 
   return (

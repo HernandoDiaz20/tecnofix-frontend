@@ -21,6 +21,7 @@ export const AdminLayout: React.FC = () => {
     { label: 'Dashboard', path: '/admin/dashboard', icon: 'dashboard' },
     { label: 'Órdenes', path: '/admin/ordenes', icon: 'build' },
     { label: 'Citas', path: '/admin/citas', icon: 'calendar_today' },
+    { label: 'Servicios', path: '/admin/servicios', icon: 'design_services' },
     { label: 'Productos', path: '/admin/productos', icon: 'inventory_2' },
     { label: 'Inventario', path: '/admin/inventario', icon: 'inventory' },
     { label: 'Repuestos', path: '/admin/repuestos', icon: 'build_circle' },

@@ -19,6 +19,7 @@ import { Parts } from '@/pages/admin/Parts';
 import { Customers } from '@/pages/admin/Customers';
 import { Technicians } from '@/pages/admin/Technicians';
 import { Appointments } from '@/pages/admin/Appointments';
+import { AdminServices } from '@/pages/admin/Services';
 import { WorkOrders } from '@/pages/admin/WorkOrders';
 import { WorkOrderDetail } from '@/pages/admin/WorkOrderDetail';
 import { Warranties } from '@/pages/admin/Warranties';
@@ -51,6 +52,7 @@ function App() {
           <Route path="clientes" element={<Customers />} />
           <Route path="tecnicos" element={<Technicians />} />
           <Route path="citas" element={<Appointments />} />
+          <Route path="servicios" element={<AdminServices />} />
           <Route path="ordenes" element={<WorkOrders />} />
           <Route path="ordenes/:id" element={<WorkOrderDetail />} />
           <Route path="garantias" element={<Warranties />} />
