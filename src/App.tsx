@@ -25,6 +25,7 @@ import { Warranties } from '@/pages/admin/Warranties';
 import { Reports } from '@/pages/admin/Reports';
 import { Audit } from '@/pages/admin/Audit';
 import { Purchases } from '@/pages/admin/Purchases';
+import { Services as AdminServices } from '@/pages/admin/Services';
 
 function App() {
   return (
@@ -49,6 +50,7 @@ function App() {
           <Route path="productos" element={<Products />} />
           <Route path="inventario" element={<Inventory />} />
           <Route path="repuestos" element={<Parts />} />
+          <Route path="servicios" element={<AdminServices />} />
           <Route path="clientes" element={<Customers />} />
           <Route path="tecnicos" element={<Technicians />} />
           <Route path="citas" element={<Appointments />} />

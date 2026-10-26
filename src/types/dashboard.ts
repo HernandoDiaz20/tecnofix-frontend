@@ -37,10 +37,11 @@ export interface DashboardWorkOrder {
   deviceSerial: string;
   problemDescription: string;
   accessories: string | null;
-  currentStatus: 'INGRESADO' | 'EN_REVISION' | 'ESPERANDO_REPUESTO' | 'EN_REPARACION' | 'REPARADO' | 'LISTO_PARA_ENTREGA' | 'ENTREGADO';
+  currentStatus: 'INGRESADO' | 'EN_REVISION' | 'ESPERANDO_REPUESTO' | 'EN_REPARACION' | 'REPARADO' | 'LISTO_PARA_ENTREGA' | 'ENTREGADO' | 'ACEPTADA' | 'PENDIENTE';
   createdAt: string;
-  // Propiedades opcionales que envuelve el backend en las relaciones (ej. customer)
+  // Propiedades opcionales que envuelve el backend en las relaciones (ej. customer, technician)
   customer?: { fullName: string; email?: string }; 
+  technician?: { fullName: string; email?: string } | null; 
 }
 
 export interface DashboardWorkOrderHistory {

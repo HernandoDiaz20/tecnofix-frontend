@@ -1,5 +1,5 @@
 import { apiClient } from '@/api/client';
-import type { Product, Service, WorkOrder, Appointment } from '@/types';
+import type { Product, ServicesResponse, WorkOrder, Appointment } from '@/types';
 
 export const ApiService = {
   getProducts: async (page: number, pageSize: number) => {
@@ -10,8 +10,8 @@ export const ApiService = {
     const { data } = await apiClient.get<Product>(`/products/${id}`);
     return data;
   },
-  getServices: async () => {
-    const { data } = await apiClient.get<Service[]>('/services');
+  getServices: async (): Promise<ServicesResponse> => {
+    const { data } = await apiClient.get<ServicesResponse>('/services');
     return data;
   },
   createAppointment: async (appointmentData: { serviceId: string; customerName: string; phone: string; date: string }) => {

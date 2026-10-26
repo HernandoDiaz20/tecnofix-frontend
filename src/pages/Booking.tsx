@@ -1,3 +1,5 @@
+import { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useServices, useCreateAppointment } from '@/api/hooks';
@@ -12,6 +14,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 export const Booking = () => {
+  const location = useLocation();
   const { data: rawServicesData } = useServices();
   const apiServices: any[] = Array.isArray(rawServicesData) 
     ? rawServicesData 
@@ -33,6 +36,14 @@ export const Booking = () => {
       phone: '',
     },
   });
+
+  useEffect(() => {
+    const passedServiceId = (location.state as any)?.serviceId;
+    if (passedServiceId) {
+      form.setValue('serviceId', passedServiceId);
+      document.getElementById('service-form')?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [location.state, form]);
 
   const handleQuickSelect = (serviceId: string) => {
     form.setValue('serviceId', serviceId);

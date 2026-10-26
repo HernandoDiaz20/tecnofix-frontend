@@ -20,13 +20,13 @@ export interface Product {
   available: boolean;
 }
 
-export interface Service {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  active: boolean;
-}
+export type { 
+  Service, 
+  ServicesResponse, 
+  CreateServiceRequest, 
+  UpdateServiceRequest, 
+  ToggleServiceStatusRequest 
+} from './services';
 
 export interface Appointment {
   id: string;
