@@ -3,7 +3,8 @@ import { useParams, Link } from 'react-router-dom';
 import {
   useAdminWorkOrderDetail,
   useAdminWorkOrderHistory,
-  useAdminWorkOrderDiagnostics
+  useAdminWorkOrderDiagnostics,
+  useAdminAppointmentById
 } from '@/api/admin-hooks';
 import { useAdminTechnicians } from '@/api/admin/technician-hooks';
 import { AssignTechnicianDialog } from '@/components/admin/work-orders/AssignTechnicianDialog';
@@ -32,6 +33,7 @@ export const WorkOrderDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
 
   const { data: order, isLoading: loadingOrder, isError: errorOrder } = useAdminWorkOrderDetail(id);
+  const { data: appointment } = useAdminAppointmentById(order?.appointmentId);
   const { data: history, isLoading: loadingHistory, isError: errorHistory } = useAdminWorkOrderHistory(id);
   const { data: diagnostics, isLoading: loadingDiagnostics, isError: errorDiagnostics } = useAdminWorkOrderDiagnostics(id);
   const { data: techData } = useAdminTechnicians();
@@ -62,6 +64,7 @@ export const WorkOrderDetail: React.FC = () => {
   const currentStatusIndex = STATUS_FLOW.indexOf(order.currentStatus);
   const assignedTech = technicians.find((t) => t.id === order.technicianId);
   const technicianDisplayName = order.technician?.fullName || assignedTech?.fullName || (order.technicianId ? order.technicianId : 'No asignado');
+  const customerDisplayName = order.customer?.fullName || appointment?.customerName || (order.customerId ? order.customerId : 'No asignado');
 
   return (
     <div className="flex flex-col gap-6">
@@ -82,7 +85,7 @@ export const WorkOrderDetail: React.FC = () => {
             </span>
           </div>
           <p className="text-on-surface-variant font-medium">
-            Cliente: <span className="text-on-surface">{order.customer?.fullName || 'No asignado'}</span> • 
+            Cliente: <span className="text-on-surface">{customerDisplayName}</span> •
             Dispositivo: <span className="text-on-surface">{order.deviceBrand} {order.deviceModel}</span>
           </p>
         </div>
@@ -139,7 +142,12 @@ export const WorkOrderDetail: React.FC = () => {
           <div className="space-y-4">
             <div className="flex justify-between border-b border-outline-variant/30 pb-2">
               <span className="text-on-surface-variant text-sm font-medium">Cliente</span>
-              <span className="text-on-surface text-sm font-medium text-right">{order.customer?.fullName || 'No asignado'}</span>
+              <span className="text-on-surface text-sm font-medium text-right">
+                {customerDisplayName}
+                {appointment?.phone && !order.customer?.fullName && (
+                  <span className="block text-xs text-on-surface-variant font-normal">Tel: {appointment.phone}</span>
+                )}
+              </span>
             </div>
             <div className="flex justify-between items-center border-b border-outline-variant/30 pb-2">
               <span className="text-on-surface-variant text-sm font-medium">Técnico Asignado</span>

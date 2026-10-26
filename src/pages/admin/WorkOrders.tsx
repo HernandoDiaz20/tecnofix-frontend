@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAdminWorkOrders } from '@/api/admin-hooks';
+import { useAdminWorkOrders, useAdminAppointments } from '@/api/admin-hooks';
 import { useAdminTechnicians } from '@/api/admin/technician-hooks';
 import { AssignTechnicianDialog } from '@/components/admin/work-orders/AssignTechnicianDialog';
 import type { DashboardWorkOrder } from '@/types/dashboard';
@@ -14,6 +14,8 @@ export const WorkOrders: React.FC = () => {
   const navigate = useNavigate();
   
   const { data, isLoading, isError } = useAdminWorkOrders(page, pageSize, statusFilter, technicianFilter);
+  const { data: appointmentsData } = useAdminAppointments(1, 100);
+  const appointments = appointmentsData?.items || [];
   const { data: techData } = useAdminTechnicians();
   const technicians = techData?.items || [];
 
@@ -21,6 +23,15 @@ export const WorkOrders: React.FC = () => {
   const [menuOpenOrderId, setMenuOpenOrderId] = useState<string | null>(null);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState<boolean>(false);
   const [selectedOrderForAssign, setSelectedOrderForAssign] = useState<DashboardWorkOrder | null>(null);
+
+  const getCustomerName = (order: DashboardWorkOrder) => {
+    if (order.customer?.fullName) return order.customer.fullName;
+    if (order.appointmentId) {
+      const appt = appointments.find((a) => a.id === order.appointmentId);
+      if (appt?.customerName) return appt.customerName;
+    }
+    return 'Cliente no asignado';
+  };
 
   const getTechnicianName = (technicianId: string | null) => {
     if (!technicianId) return 'No asignado';
@@ -158,7 +169,7 @@ export const WorkOrders: React.FC = () => {
                     onClick={() => navigate(`/admin/ordenes-servicio/${order.id}`)}
                   >
                     <td className="py-3 px-6 font-medium text-on-surface">{order.guideNumber}</td>
-                    <td className="py-3 px-6">{order.customer?.fullName || 'Cliente no asignado'}</td>
+                    <td className="py-3 px-6">{getCustomerName(order)}</td>
                     <td className="py-3 px-6 text-on-surface-variant">{order.deviceBrand} {order.deviceModel}</td>
                     <td className="py-3 px-6 text-on-surface-variant font-medium">
                       {getTechnicianName(order.technicianId)}
@@ -190,7 +201,7 @@ export const WorkOrders: React.FC = () => {
                               className="w-full px-4 py-2.5 flex items-center gap-2.5 text-on-surface hover:bg-surface-container-high transition-colors"
                             >
                               <span className="material-symbols-outlined text-base text-primary">engineering</span>
-                              <span>Asignar técnico</span>
+                              <span>{order.technicianId ? 'Cambiar técnico' : 'Asignar técnico'}</span>
                             </button>
                             <button
                               onClick={() => {

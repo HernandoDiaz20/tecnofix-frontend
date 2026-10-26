@@ -78,6 +78,8 @@ export const useCreateWorkOrder = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['work-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-work-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-recent-orders'] });
     },
   });
 };
@@ -214,6 +216,25 @@ export const useCreateWorkOrderDiagnostic = () => {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['work-order-diagnostics', variables.id] });
+    },
+  });
+};
+
+// Asignar técnico a la orden
+export const useAssignTechnician = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, technicianId }: { id: string; technicianId: string }) => {
+      const response = await apiClient.patch<WorkOrder>(`/work-orders/${id}/assign-technician`, {
+        technicianId,
+      });
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['work-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['work-order', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['admin-work-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-work-order-detail', variables.id] });
     },
   });
 };

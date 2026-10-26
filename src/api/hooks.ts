@@ -1,4 +1,4 @@
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ApiService } from '@/services/api.service';
 
 // Products
@@ -27,9 +27,24 @@ export const useServices = () => {
 
 // Appointments
 export const useCreateAppointment = () => {
+  const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (appointmentData: { serviceId: string; customerName: string; phone: string; date: string }) => {
+    mutationFn: (appointmentData: {
+      serviceId: string;
+      customerName: string;
+      phone: string;
+      date: string;
+      deviceBrand?: string;
+      deviceModel?: string;
+      problemDescription?: string;
+    }) => {
       return ApiService.createAppointment(appointmentData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-today-appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-pending-appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
     },
   });
 };
