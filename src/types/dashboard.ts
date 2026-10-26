@@ -39,6 +39,7 @@ export interface DashboardWorkOrder {
   accessories: string | null;
   currentStatus: 'INGRESADO' | 'EN_REVISION' | 'ESPERANDO_REPUESTO' | 'EN_REPARACION' | 'REPARADO' | 'LISTO_PARA_ENTREGA' | 'ENTREGADO' | 'ACEPTADA' | 'PENDIENTE';
   createdAt: string;
+  appointmentId?: string | null;
   // Propiedades opcionales que envuelve el backend en las relaciones (ej. customer, technician)
   customer?: { fullName: string; email?: string }; 
   technician?: { fullName: string; email?: string } | null; 
@@ -63,7 +64,17 @@ export interface DashboardWorkOrderDiagnostic {
 
 export interface DashboardAppointment {
   id: string;
+  serviceId?: string;
   customerName: string;
+  phone?: string;
   date: string;
   status: 'pendiente' | 'confirmada' | 'cancelada' | 'completada';
+  createdAt?: string;
+  deviceBrand?: string;
+  deviceModel?: string;
+  deviceSerial?: string;
+  problemDescription?: string;
+  completedServices?: string | null;
+  completedNotes?: string | null;
+  completedAt?: string | null;
 }

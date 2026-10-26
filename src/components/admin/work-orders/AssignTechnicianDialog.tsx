@@ -47,6 +47,15 @@ const AssignTechnicianForm: React.FC<AssignTechnicianFormProps> = ({ order, onCl
       return;
     }
 
+    if (order.technicianId && selectedTechId === order.technicianId) {
+      toast({
+        title: 'Técnico ya asignado',
+        description: 'El técnico seleccionado ya se encuentra asignado a esta orden de servicio.',
+      });
+      onClose();
+      return;
+    }
+
     try {
       await assignMutation.mutateAsync({
         workOrderId: order.id,
@@ -105,6 +114,15 @@ const AssignTechnicianForm: React.FC<AssignTechnicianFormProps> = ({ order, onCl
           </span>
         </div>
       </div>
+
+      {order.technicianId && (
+        <div className="p-3 rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/40 dark:border-amber-900/60 text-amber-800 dark:text-amber-200 text-xs flex items-start gap-2">
+          <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+          <span>
+            Esta orden ya cuenta con un técnico asignado. Ten en cuenta que si el taller tiene restringida la reasignación, el servidor rechazará cambios posteriores.
+          </span>
+        </div>
+      )}
 
       {/* Technician Selector */}
       <div className="space-y-2">

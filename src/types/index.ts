@@ -55,6 +55,13 @@ export interface Appointment {
   date: string; // ISO Date String
   status: 'pendiente' | 'confirmada' | 'cancelada' | 'completada';
   createdAt: string;
+  deviceBrand?: string;
+  deviceModel?: string;
+  deviceSerial?: string;
+  problemDescription?: string;
+  completedServices?: string | null;
+  completedNotes?: string | null;
+  completedAt?: string | null;
 }
 
 export type OrderStatus =
@@ -80,6 +87,7 @@ export interface WorkOrder {
   currentStatus: OrderStatus;
   createdAt: string;
   updatedAt?: string;
+  appointmentId?: string | null;
 }
 
 export interface CreateWorkOrderInput {
