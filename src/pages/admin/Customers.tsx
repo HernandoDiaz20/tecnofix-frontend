@@ -1,29 +1,37 @@
 import React, { useState } from 'react';
-import { useAdminCustomers } from '@/api/admin/customer-hooks';
+import { useAdminCustomers, useDeleteCustomer } from '@/api/admin/customer-hooks';
 import { CustomersTable } from '@/components/admin/customers/CustomersTable';
 import { CustomerForm } from '@/components/admin/customers/CustomerForm';
 import { CustomerDetail } from '@/components/admin/customers/CustomerDetail';
-import { Pagination } from '@/components/admin/products/Pagination';
+import { ConfirmDialog } from '@/components/admin/products/ConfirmDialog';
+import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
 import type { Customer } from '@/types/customers';
-import { Search, Plus, FilterX } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { AxiosError } from 'axios';
+import type { ApiError } from '@/types';
 
 export const Customers: React.FC = () => {
   const [page, setPage] = useState(1);
-  const pageSize = 10;
+  const pageSize = 20;
 
-  const { data, isLoading } = useAdminCustomers(page, pageSize);
+  const { data, isLoading, isError } = useAdminCustomers(page, pageSize);
+  const deleteMutation = useDeleteCustomer();
+  const { toast } = useToast();
 
-  // Modals state
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
-
-  // Selected customer state
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-
-  // Frontend filtering state
-  const [searchTerm, setSearchTerm] = useState('');
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | undefined>(undefined);
 
   const handleCreate = () => {
+    setSelectedCustomer(undefined);
+    setIsFormOpen(true);
+  };
+
+  const handleEdit = (customer: Customer) => {
+    setSelectedCustomer(customer);
     setIsFormOpen(true);
   };
 
@@ -32,90 +40,128 @@ export const Customers: React.FC = () => {
     setIsDetailOpen(true);
   };
 
-  // Derived data
-  const rawCustomers = data?.items || [];
+  const handleDeleteRequest = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setIsDeleteDialogOpen(true);
+  };
 
-  // Frontend filtering (filters only the current page of items since backend lacks global search)
-  const filteredCustomers = rawCustomers.filter(c => {
-    const matchesSearch = c.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (c.email && c.email.toLowerCase().includes(searchTerm.toLowerCase()));
-
-    return matchesSearch;
-  });
+  const confirmDelete = async () => {
+    if (!selectedCustomer) return;
+    
+    try {
+      await deleteMutation.mutateAsync(selectedCustomer.id);
+      toast({
+        title: 'Cliente eliminado',
+        description: 'El cliente se ha eliminado correctamente.',
+      });
+      setIsDeleteDialogOpen(false);
+    } catch (error) {
+      // Capture 400 Bad Request or similar error (like active work orders)
+      let errorMessage = 'Ocurrió un error al eliminar el cliente.';
+      if (error instanceof AxiosError && error.response?.data) {
+        const apiError = error.response.data as ApiError;
+        errorMessage = apiError.error?.message || errorMessage;
+      }
+      
+      toast({
+        title: 'No se puede eliminar el cliente',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+      setIsDeleteDialogOpen(false);
+    }
+  };
 
   return (
-    <div className="p-margin flex-1 flex flex-col gap-lg max-w-[1440px] mx-auto w-full">
-      {/* Page Header & Global Actions */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-md">
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="font-h3 text-h3 text-on-surface">Gestión de Clientes</h2>
-          <p className="font-body-md text-body-md text-on-surface-variant mt-1">
-            Directorio y gestión de clientes registrados en el sistema.
+          <h1 className="text-2xl font-bold text-on-background tracking-tight">Clientes</h1>
+          <p className="text-sm text-on-surface-variant mt-1">
+            Gestión de clientes registrados
           </p>
         </div>
-        <div className="flex flex-wrap gap-sm">
-          <button
-            onClick={handleCreate}
-            className="bg-primary text-on-primary hover:bg-primary/90 font-label-md text-label-md px-4 py-3 rounded-lg flex items-center gap-2 transition-colors shadow-sm"
-          >
-            <Plus className="w-[18px] h-[18px]" />
-            Añadir Cliente
-          </button>
-        </div>
+        <Button 
+          onClick={handleCreate}
+          className="bg-primary text-on-primary hover:bg-primary/90 shadow-sm"
+        >
+          <Plus className="w-5 h-5 mr-2" />
+          Nuevo cliente
+        </Button>
       </div>
 
-      {/* Filters & Search Bar */}
-      <div className="bg-surface border border-outline-variant rounded-xl p-md flex flex-col lg:flex-row gap-md items-center shadow-sm">
-        <div className="relative flex-1 w-full group">
-          <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors" />
-          <input
-            type="text"
-            className="w-full bg-surface-container-lowest border border-outline-variant rounded-lg py-2.5 pl-10 pr-4 font-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-on-surface-variant/60"
-            placeholder="Buscar por nombre o email en esta página..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
+      <div className="bg-surface rounded-xl shadow-sm border border-outline-variant p-6">
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-12 space-y-4">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <p className="text-on-surface-variant text-sm">Cargando clientes...</p>
+          </div>
+        ) : isError ? (
+          <div className="flex flex-col items-center justify-center py-12 text-error text-center">
+            <span className="material-symbols-outlined text-4xl mb-2">error</span>
+            <p>Ocurrió un error al cargar los clientes.</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <CustomersTable
+              customers={data?.items || []}
+              onView={handleView}
+              onEdit={handleEdit}
+              onDelete={handleDeleteRequest}
+            />
 
-        <div className="flex flex-wrap items-center gap-sm w-full lg:w-auto">
-           <span className="text-[11px] text-on-surface-variant italic">
-            *La búsqueda aplica solo a la página actual
-          </span>
-          <button
-            onClick={() => setSearchTerm('')}
-            className="bg-surface-container-low text-on-surface border border-outline-variant hover:bg-surface-container p-2.5 rounded-lg transition-colors ml-2"
-            title="Limpiar Búsqueda"
-          >
-            <FilterX className="w-5 h-5" />
-          </button>
-        </div>
+            {/* Paginación simple basada en 'total' si hay más de 1 página */}
+            {data && data.total > pageSize && (
+              <div className="flex items-center justify-between pt-4 border-t border-outline-variant">
+                <span className="text-sm text-on-surface-variant">
+                  Mostrando {Math.min((page - 1) * pageSize + 1, data.total)} a {Math.min(page * pageSize, data.total)} de {data.total} clientes
+                </span>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                  >
+                    Anterior
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage(p => p + 1)}
+                    disabled={page * pageSize >= data.total}
+                  >
+                    Siguiente
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Table */}
-      <CustomersTable
-        customers={filteredCustomers}
-        isLoading={isLoading}
-        onView={handleView}
-      />
-
-      {/* Pagination */}
-      <Pagination
-        currentPage={page}
-        totalItems={data?.total || 0}
-        pageSize={pageSize}
-        onPageChange={setPage}
-      />
-
-      {/* Modals */}
       <CustomerForm
         isOpen={isFormOpen}
         onOpenChange={setIsFormOpen}
+        customer={selectedCustomer}
       />
 
       <CustomerDetail
         isOpen={isDetailOpen}
         onOpenChange={setIsDetailOpen}
         customer={selectedCustomer}
+      />
+
+      <ConfirmDialog
+        isOpen={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        onConfirm={confirmDelete}
+        title="¿Estás seguro de que deseas eliminar este cliente?"
+        description={`Esta acción es permanente y no se puede deshacer. Vas a eliminar a ${selectedCustomer?.fullName}. Si el cliente tiene órdenes de servicio activas, la acción será denegada por el sistema.`}
+        confirmText="Eliminar cliente"
+        cancelText="Cancelar"
+        variant="destructive"
+        isLoading={deleteMutation.isPending}
       />
     </div>
   );

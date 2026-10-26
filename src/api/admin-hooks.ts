@@ -6,7 +6,9 @@ import type {
   DashboardCustomer, 
   DashboardPart,
   DashboardWorkOrder,
-  DashboardAppointment
+  DashboardAppointment,
+  DashboardWorkOrderHistory,
+  DashboardWorkOrderDiagnostic
 } from '@/types/dashboard';
 
 export const useAdminProductsCount = () => {
@@ -89,5 +91,55 @@ export const useAdminOrdersByStatus = () => {
       const { data } = await apiClient.get<any>('/reports/orders-by-status');
       return data;
     }
+  });
+};
+
+// ==========================================
+// WORK ORDERS MODULE
+// ==========================================
+
+export const useAdminWorkOrders = (page: number, pageSize: number, status?: string, technicianId?: string) => {
+  return useQuery({
+    queryKey: ['admin-work-orders', page, pageSize, status, technicianId],
+    queryFn: async () => {
+      let url = `/work-orders?page=${page}&pageSize=${pageSize}`;
+      if (status) url += `&status=${status}`;
+      if (technicianId) url += `&technicianId=${technicianId}`;
+      const { data } = await apiClient.get<PaginatedResponse<DashboardWorkOrder>>(url);
+      return data;
+    }
+  });
+};
+
+export const useAdminWorkOrderDetail = (id: string | undefined) => {
+  return useQuery({
+    queryKey: ['admin-work-order-detail', id],
+    queryFn: async () => {
+      const { data } = await apiClient.get<DashboardWorkOrder>(`/work-orders/${id}`);
+      return data;
+    },
+    enabled: !!id
+  });
+};
+
+export const useAdminWorkOrderHistory = (id: string | undefined) => {
+  return useQuery({
+    queryKey: ['admin-work-order-history', id],
+    queryFn: async () => {
+      const { data } = await apiClient.get<{ items: DashboardWorkOrderHistory[] }>(`/work-orders/${id}/history`);
+      return data.items;
+    },
+    enabled: !!id
+  });
+};
+
+export const useAdminWorkOrderDiagnostics = (id: string | undefined) => {
+  return useQuery({
+    queryKey: ['admin-work-order-diagnostics', id],
+    queryFn: async () => {
+      const { data } = await apiClient.get<{ items: DashboardWorkOrderDiagnostic[] }>(`/work-orders/${id}/diagnostics`);
+      return data.items;
+    },
+    enabled: !!id
   });
 };

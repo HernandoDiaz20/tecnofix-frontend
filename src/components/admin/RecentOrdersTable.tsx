@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { DashboardWorkOrder } from '@/types/dashboard';
 
 interface RecentOrdersTableProps {
@@ -12,6 +13,7 @@ export const RecentOrdersTable: React.FC<RecentOrdersTableProps> = ({
   isLoading,
   isError
 }) => {
+  const navigate = useNavigate();
   const getStatusBadge = (status: DashboardWorkOrder['currentStatus'] | undefined) => {
     switch (status) {
       case 'INGRESADO':
@@ -61,6 +63,7 @@ export const RecentOrdersTable: React.FC<RecentOrdersTableProps> = ({
               <th className="py-3 px-6 text-sm font-semibold text-on-surface-variant">Orden</th>
               <th className="py-3 px-6 text-sm font-semibold text-on-surface-variant">Cliente</th>
               <th className="py-3 px-6 text-sm font-semibold text-on-surface-variant">Dispositivo</th>
+              <th className="py-3 px-6 text-sm font-semibold text-on-surface-variant">Técnico</th>
               <th className="py-3 px-6 text-sm font-semibold text-on-surface-variant">Estado</th>
               <th className="py-3 px-6 text-sm font-semibold text-on-surface-variant">Fecha</th>
               <th className="py-3 px-6 text-sm font-semibold text-on-surface-variant text-right">Acciones</th>
@@ -73,6 +76,7 @@ export const RecentOrdersTable: React.FC<RecentOrdersTableProps> = ({
                   <td className="py-4 px-6"><div className="h-4 bg-surface-container-high rounded w-20 animate-pulse"></div></td>
                   <td className="py-4 px-6"><div className="h-4 bg-surface-container-high rounded w-32 animate-pulse"></div></td>
                   <td className="py-4 px-6"><div className="h-4 bg-surface-container-high rounded w-32 animate-pulse"></div></td>
+                  <td className="py-4 px-6"><div className="h-4 bg-surface-container-high rounded w-24 animate-pulse"></div></td>
                   <td className="py-4 px-6"><div className="h-5 bg-surface-container-high rounded-full w-24 animate-pulse"></div></td>
                   <td className="py-4 px-6"><div className="h-4 bg-surface-container-high rounded w-20 animate-pulse"></div></td>
                   <td className="py-4 px-6 text-right"><div className="h-4 bg-surface-container-high rounded w-8 animate-pulse inline-block"></div></td>
@@ -86,10 +90,15 @@ export const RecentOrdersTable: React.FC<RecentOrdersTableProps> = ({
               </tr>
             ) : (
               orders.map((order) => (
-                <tr key={order.id} className="hover:bg-surface-bright transition-colors cursor-pointer">
+                <tr 
+                  key={order.id} 
+                  className="hover:bg-surface-bright transition-colors cursor-pointer"
+                  onClick={() => navigate(`/admin/ordenes-servicio/${order.id}`)}
+                >
                   <td className="py-3 px-6 font-medium text-on-surface">{order.guideNumber}</td>
                   <td className="py-3 px-6">{order.customer?.fullName || 'Cliente no asignado'}</td>
                   <td className="py-3 px-6 text-on-surface-variant">{order.deviceBrand} {order.deviceModel}</td>
+                  <td className="py-3 px-6 text-on-surface-variant">{order.technicianId || 'No asignado'}</td>
                   <td className="py-3 px-6">{getStatusBadge(order.currentStatus)}</td>
                   <td className="py-3 px-6 text-on-surface-variant">{formatDate(order.createdAt)}</td>
                   <td className="py-3 px-6 text-right">

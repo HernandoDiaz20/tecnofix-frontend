@@ -1,655 +1,256 @@
-import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React from 'react';
+import { useParams, Link } from 'react-router-dom';
 import {
-  useWorkOrderDetail,
-  useWorkOrderHistory,
-  useWorkOrderActivities,
-  useCreateWorkOrderActivity,
-  useWorkOrderPhotos,
-  useUploadWorkOrderPhoto,
-  useWorkOrderDiagnostics,
-  useCreateWorkOrderDiagnostic,
-  useTransitionOrderStatus,
-  useRegisterExitWorkOrder,
-} from '@/api/work-orders';
-import type { OrderStatus } from '@/types';
-import {
-  ArrowLeft,
-  Wrench,
-  Clock,
-  FileCheck,
-  Camera,
-  FileText,
-  Activity as ActivityIcon,
-  Send,
-  Plus,
-  User,
-  ShieldCheck,
-  Upload,
-} from 'lucide-react';
+  useAdminWorkOrderDetail,
+  useAdminWorkOrderHistory,
+  useAdminWorkOrderDiagnostics
+} from '@/api/admin-hooks';
 
-const STATUS_OPTIONS: { value: OrderStatus; label: string; color: string }[] = [
-  { value: 'INGRESADO', label: 'Ingresado', color: 'bg-slate-100 text-slate-800 border-slate-300' },
-  { value: 'EN_REVISION', label: 'En Revisión', color: 'bg-blue-100 text-blue-800 border-blue-300' },
-  { value: 'ESPERANDO_REPUESTO', label: 'Esperando Repuesto', color: 'bg-amber-100 text-amber-800 border-amber-300' },
-  { value: 'EN_REPARACION', label: 'En Reparación', color: 'bg-indigo-100 text-indigo-800 border-indigo-300' },
-  { value: 'REPARADO', label: 'Reparado', color: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
-  { value: 'LISTO_PARA_ENTREGA', label: 'Listo para Entrega', color: 'bg-purple-100 text-purple-800 border-purple-300' },
-  { value: 'ENTREGADO', label: 'Entregado', color: 'bg-gray-200 text-gray-800 border-gray-300' },
+const STATUS_FLOW = [
+  'INGRESADO',
+  'EN_REVISION',
+  'ESPERANDO_REPUESTO',
+  'EN_REPARACION',
+  'REPARADO',
+  'LISTO_PARA_ENTREGA',
+  'ENTREGADO'
 ];
+
+const STATUS_LABELS: Record<string, string> = {
+  'INGRESADO': 'Ingreso',
+  'EN_REVISION': 'Revisión',
+  'ESPERANDO_REPUESTO': 'Repuesto',
+  'EN_REPARACION': 'Reparación',
+  'REPARADO': 'Reparado',
+  'LISTO_PARA_ENTREGA': 'Listo',
+  'ENTREGADO': 'Entregado'
+};
 
 export const WorkOrderDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
 
-  // Queries
-  const { data: order, isLoading, isError } = useWorkOrderDetail(id);
-  const { data: history = [] } = useWorkOrderHistory(id);
-  const { data: activities = [] } = useWorkOrderActivities(id);
-  const { data: photos = [] } = useWorkOrderPhotos(id);
-  const { data: diagnostics = [] } = useWorkOrderDiagnostics(id);
+  const { data: order, isLoading: loadingOrder, isError: errorOrder } = useAdminWorkOrderDetail(id);
+  const { data: history, isLoading: loadingHistory, isError: errorHistory } = useAdminWorkOrderHistory(id);
+  const { data: diagnostics, isLoading: loadingDiagnostics, isError: errorDiagnostics } = useAdminWorkOrderDiagnostics(id);
 
-  // Mutations
-  const transitionMutation = useTransitionOrderStatus();
-  const addActivityMutation = useCreateWorkOrderActivity();
-  const uploadPhotoMutation = useUploadWorkOrderPhoto();
-  const addDiagnosticMutation = useCreateWorkOrderDiagnostic();
-  const exitRegisterMutation = useRegisterExitWorkOrder();
-
-  // Form States
-  const [activityText, setActivityText] = useState('');
-  const [photoKind, setPhotoKind] = useState<'inicial' | 'final'>('inicial');
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-
-  // Diagnostic form
-  const [diagObservations, setDiagObservations] = useState('');
-  const [diagFaults, setDiagFaults] = useState('');
-  const [diagActions, setDiagActions] = useState('');
-
-  // Exit Register form
-  const [exitFinalState, setExitFinalState] = useState('');
-  const [exitRepairs, setExitRepairs] = useState('');
-  const [exitParts, setExitParts] = useState('');
-  const [exitObs, setExitObs] = useState('');
-
-  const [activeTab, setActiveTab] = useState<'general' | 'activities' | 'diagnostics' | 'photos' | 'exit'>('general');
-
-  if (isLoading) {
+  if (loadingOrder) {
     return (
-      <div className="p-12 text-center text-on-surface-variant font-medium">
-        Cargando detalle de la orden de trabajo...
+      <div className="flex flex-col items-center justify-center h-64">
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+        <p className="mt-4 text-on-surface-variant font-medium">Cargando detalles de la orden...</p>
       </div>
     );
   }
 
-  if (isError || !order) {
+  if (errorOrder || !order) {
     return (
-      <div className="p-12 text-center text-error font-medium">
-        No se encontró la orden de trabajo o surgió un error al consultar los datos.
-        <div className="mt-4">
-          <button
-            onClick={() => navigate('/admin/ordenes')}
-            className="px-4 py-2 bg-primary text-white rounded-xl text-sm font-bold"
-          >
-            Volver a Órdenes
+      <div className="bg-surface-container-lowest p-8 rounded-xl border border-outline-variant/50 text-center">
+        <span className="material-symbols-outlined text-error text-5xl mb-4">error</span>
+        <h2 className="text-xl font-bold text-on-surface mb-2">Orden no encontrada</h2>
+        <p className="text-on-surface-variant mb-6">No se pudo cargar la información de la orden o no existe.</p>
+        <Link to="/admin/ordenes-servicio" className="text-primary font-semibold hover:underline">Volver a Órdenes</Link>
+      </div>
+    );
+  }
+
+  const currentStatusIndex = STATUS_FLOW.indexOf(order.currentStatus);
+
+  return (
+    <div className="flex flex-col gap-6">
+      {/* Breadcrumb */}
+      <div className="text-sm text-on-surface-variant font-medium flex items-center gap-2">
+        <Link to="/admin/ordenes-servicio" className="hover:text-primary transition-colors">Órdenes de Servicio</Link>
+        <span className="material-symbols-outlined text-sm">chevron_right</span>
+        <span className="text-on-surface">Orden {order.guideNumber}</span>
+      </div>
+
+      {/* Header */}
+      <div className="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/50 p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <div className="flex items-center gap-4 mb-2">
+            <h1 className="text-2xl font-bold text-on-surface tracking-tight">Orden {order.guideNumber}</h1>
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-primary-container text-on-primary-container">
+              {STATUS_LABELS[order.currentStatus] || order.currentStatus}
+            </span>
+          </div>
+          <p className="text-on-surface-variant font-medium">
+            Cliente: <span className="text-on-surface">{order.customer?.fullName || 'No asignado'}</span> • 
+            Dispositivo: <span className="text-on-surface">{order.deviceBrand} {order.deviceModel}</span>
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-3">
+          <button className="px-4 py-2 border border-outline-variant rounded-lg text-sm font-semibold hover:bg-surface-container transition-colors flex items-center gap-2">
+            <span className="material-symbols-outlined text-sm">inventory_2</span> Agregar Repuesto
+          </button>
+          <button className="px-4 py-2 border border-outline-variant rounded-lg text-sm font-semibold hover:bg-surface-container transition-colors flex items-center gap-2">
+            <span className="material-symbols-outlined text-sm">check_circle</span> Registrar Entrega
+          </button>
+          <button className="bg-primary hover:bg-primary-container text-on-primary text-sm font-semibold px-4 py-2 rounded-lg transition-colors shadow-sm flex items-center gap-2">
+            <span className="material-symbols-outlined text-sm">sync</span> Actualizar Estado
           </button>
         </div>
       </div>
-    );
-  }
 
-  const handleStatusChange = async (newStatus: OrderStatus) => {
-    try {
-      await transitionMutation.mutateAsync({
-        id: order.id,
-        data: { toStatus: newStatus },
-      });
-    } catch (err: any) {
-      alert(err.response?.data?.error?.message || 'Error al cambiar estado');
-    }
-  };
-
-  const handleAddActivity = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!activityText.trim()) return;
-
-    try {
-      await addActivityMutation.mutateAsync({
-        id: order.id,
-        data: { description: activityText },
-      });
-      setActivityText('');
-    } catch (err: any) {
-      alert(err.response?.data?.error?.message || 'Error al guardar actividad');
-    }
-  };
-
-  const handleUploadPhoto = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedFile) return;
-
-    try {
-      await uploadPhotoMutation.mutateAsync({
-        id: order.id,
-        file: selectedFile,
-        kind: photoKind,
-      });
-      setSelectedFile(null);
-    } catch (err: any) {
-      alert(err.response?.data?.error?.message || 'Error al subir foto');
-    }
-  };
-
-  const handleAddDiagnostic = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!diagObservations.trim() || !diagFaults.trim() || !diagActions.trim()) {
-      alert('Todos los campos del diagnóstico son obligatorios.');
-      return;
-    }
-
-    try {
-      await addDiagnosticMutation.mutateAsync({
-        id: order.id,
-        data: {
-          observations: diagObservations,
-          faults: diagFaults,
-          recommendedActions: diagActions,
-        },
-      });
-      setDiagObservations('');
-      setDiagFaults('');
-      setDiagActions('');
-    } catch (err: any) {
-      alert(err.response?.data?.error?.message || 'Error al registrar diagnóstico');
-    }
-  };
-
-  const handleExitRegisterSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!exitFinalState.trim() || !exitRepairs.trim()) {
-      alert('El estado final y las reparaciones realizadas son obligatorios.');
-      return;
-    }
-
-    try {
-      await exitRegisterMutation.mutateAsync({
-        id: order.id,
-        data: {
-          finalState: exitFinalState,
-          repairsPerformed: exitRepairs,
-          partsUsed: exitParts,
-          observations: exitObs,
-        },
-      });
-      alert('Salida registrada exitosamente');
-    } catch (err: any) {
-      alert(err.response?.data?.error?.message || 'Error al registrar salida');
-    }
-  };
-
-  return (
-    <div className="flex-1 flex flex-col gap-6 max-w-[1440px] mx-auto w-full">
-      {/* Top Action & Navigation */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <button
-          onClick={() => navigate('/admin/ordenes')}
-          className="inline-flex items-center gap-2 text-sm font-semibold text-on-surface-variant hover:text-primary transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" /> Volver al listado de órdenes
-        </button>
-
-        <div className="flex items-center gap-3">
-          <span className="text-xs font-bold text-on-surface-variant uppercase">Estado actual:</span>
-          <select
-            className="bg-surface-container-lowest border border-outline-variant rounded-xl py-2 px-4 text-xs font-bold text-primary focus:border-primary outline-none cursor-pointer"
-            value={order.currentStatus}
-            onChange={(e) => handleStatusChange(e.target.value as OrderStatus)}
-          >
-            {STATUS_OPTIONS.map((st) => (
-              <option key={st.value} value={st.value}>
-                {st.label}
-              </option>
-            ))}
-          </select>
+      {/* Stepper */}
+      <div className="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/50 p-6 overflow-x-auto">
+        <div className="min-w-[700px] flex justify-between items-center relative">
+          <div className="absolute left-6 right-6 top-5 h-1 bg-surface-container-high -z-10"></div>
+          {STATUS_FLOW.map((status, index) => {
+            const isCompleted = index <= currentStatusIndex;
+            const isCurrent = index === currentStatusIndex;
+            return (
+              <div key={status} className="flex flex-col items-center gap-2 relative z-10 w-24">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm border-4 border-surface-container-lowest transition-colors ${isCompleted ? 'bg-primary text-on-primary' : 'bg-surface-container-high text-on-surface-variant'}`}>
+                  {isCompleted ? <span className="material-symbols-outlined text-lg">check</span> : (index + 1)}
+                </div>
+                <span className={`text-xs font-semibold text-center ${isCurrent ? 'text-primary' : 'text-on-surface-variant'}`}>
+                  {STATUS_LABELS[status]}
+                </span>
+              </div>
+            );
+          })}
         </div>
       </div>
 
-      {/* Main Order Info Banner */}
-      <div className="bg-surface border border-outline-variant rounded-2xl p-6 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-black text-primary font-mono">{order.guideNumber}</h1>
-            <span className="text-xs bg-primary/10 text-primary px-3 py-1 rounded-full font-bold">
-              {order.currentStatus}
-            </span>
+      {/* Grid Content */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        {/* Información */}
+        <div className="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/50 p-6 flex flex-col">
+          <h3 className="text-lg font-semibold text-on-surface mb-6 flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary">person</span> Información
+          </h3>
+          <div className="space-y-4">
+            <div className="flex justify-between border-b border-outline-variant/30 pb-2">
+              <span className="text-on-surface-variant text-sm font-medium">Cliente</span>
+              <span className="text-on-surface text-sm font-medium text-right">{order.customer?.fullName || 'No asignado'}</span>
+            </div>
+            <div className="flex justify-between border-b border-outline-variant/30 pb-2">
+              <span className="text-on-surface-variant text-sm font-medium">Técnico Asignado</span>
+              <span className="text-on-surface text-sm font-medium text-right">{order.technicianId || 'No asignado'}</span>
+            </div>
+            <div className="flex justify-between border-b border-outline-variant/30 pb-2">
+              <span className="text-on-surface-variant text-sm font-medium">Dispositivo</span>
+              <span className="text-on-surface text-sm font-medium text-right">{order.deviceBrand} {order.deviceModel}</span>
+            </div>
+            <div className="flex justify-between border-b border-outline-variant/30 pb-2">
+              <span className="text-on-surface-variant text-sm font-medium">IMEI/Serial</span>
+              <span className="text-on-surface text-sm font-medium text-right">{order.deviceSerial}</span>
+            </div>
+            <div className="flex justify-between border-b border-outline-variant/30 pb-2">
+              <span className="text-on-surface-variant text-sm font-medium">Fecha Ingreso</span>
+              <span className="text-on-surface text-sm font-medium text-right">{new Date(order.createdAt).toLocaleDateString('es-ES')}</span>
+            </div>
           </div>
-          <p className="text-lg font-bold text-on-surface mt-1">
-            {order.deviceBrand} {order.deviceModel}
-          </p>
-          <p className="text-xs text-on-surface-variant">S/N: {order.deviceSerial || 'No especificado'}</p>
         </div>
 
-        <div className="text-xs text-on-surface-variant space-y-1 text-right">
-          <div>Ingresado el: {new Date(order.createdAt).toLocaleString('es-CO')}</div>
-          {order.updatedAt && <div>Última actualización: {new Date(order.updatedAt).toLocaleString('es-CO')}</div>}
-        </div>
-      </div>
-
-      {/* Navigation Tabs */}
-      <div className="flex border-b border-outline-variant gap-2 overflow-x-auto">
-        <button
-          onClick={() => setActiveTab('general')}
-          className={`px-4 py-3 text-sm font-bold border-b-2 transition-all flex items-center gap-2 ${
-            activeTab === 'general'
-              ? 'border-primary text-primary'
-              : 'border-transparent text-on-surface-variant hover:text-on-surface'
-          }`}
-        >
-          <FileText className="w-4 h-4" /> Información General
-        </button>
-        <button
-          onClick={() => setActiveTab('activities')}
-          className={`px-4 py-3 text-sm font-bold border-b-2 transition-all flex items-center gap-2 ${
-            activeTab === 'activities'
-              ? 'border-primary text-primary'
-              : 'border-transparent text-on-surface-variant hover:text-on-surface'
-          }`}
-        >
-          <ActivityIcon className="w-4 h-4" /> Bitácora de Actividades ({activities.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('diagnostics')}
-          className={`px-4 py-3 text-sm font-bold border-b-2 transition-all flex items-center gap-2 ${
-            activeTab === 'diagnostics'
-              ? 'border-primary text-primary'
-              : 'border-transparent text-on-surface-variant hover:text-on-surface'
-          }`}
-        >
-          <Wrench className="w-4 h-4" /> Diagnósticos ({diagnostics.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('photos')}
-          className={`px-4 py-3 text-sm font-bold border-b-2 transition-all flex items-center gap-2 ${
-            activeTab === 'photos'
-              ? 'border-primary text-primary'
-              : 'border-transparent text-on-surface-variant hover:text-on-surface'
-          }`}
-        >
-          <Camera className="w-4 h-4" /> Fotos ({photos.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('exit')}
-          className={`px-4 py-3 text-sm font-bold border-b-2 transition-all flex items-center gap-2 ${
-            activeTab === 'exit'
-              ? 'border-primary text-primary'
-              : 'border-transparent text-on-surface-variant hover:text-on-surface'
-          }`}
-        >
-          <FileCheck className="w-4 h-4" /> Registro de Salida
-        </button>
-      </div>
-
-      {/* Tab Contents */}
-      {activeTab === 'general' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
-            <div className="bg-surface border border-outline-variant rounded-2xl p-6 shadow-sm space-y-4">
-              <h3 className="text-base font-bold text-on-surface flex items-center gap-2">
-                <ShieldCheck className="w-5 h-5 text-primary" /> Datos del Dispositivo
-              </h3>
-
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-xs text-on-surface-variant block font-medium">Marca</span>
-                  <span className="font-bold text-on-surface">{order.deviceBrand}</span>
+        {/* Diagnóstico Técnico */}
+        <div className="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/50 p-6 flex flex-col">
+          <h3 className="text-lg font-semibold text-on-surface mb-6 flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary">build</span> Diagnóstico Técnico
+          </h3>
+          <div className="flex flex-col md:flex-row gap-4 h-full">
+            <div className="flex-1 bg-surface-container-low p-4 rounded-lg">
+              <h4 className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Problema Reportado (Cliente)</h4>
+              <p className="text-sm text-on-surface italic">"{order.problemDescription}"</p>
+            </div>
+            <div className="flex-1 bg-primary-container/20 p-4 rounded-lg border border-primary-container">
+              <h4 className="text-xs font-bold text-primary uppercase tracking-wider mb-2">Diagnóstico Técnico</h4>
+              {loadingDiagnostics ? (
+                <div className="h-20 flex items-center justify-center"><div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div></div>
+              ) : errorDiagnostics ? (
+                <p className="text-sm text-error font-medium">Error al cargar diagnóstico</p>
+              ) : diagnostics && diagnostics.length > 0 ? (
+                <div className="text-sm text-on-surface space-y-2">
+                  <p><strong>Observaciones:</strong> {diagnostics[0].observations}</p>
+                  <p><strong>Fallas:</strong> {diagnostics[0].faults}</p>
+                  <p><strong>Acciones:</strong> {diagnostics[0].recommendedActions}</p>
                 </div>
-                <div>
-                  <span className="text-xs text-on-surface-variant block font-medium">Modelo</span>
-                  <span className="font-bold text-on-surface">{order.deviceModel}</span>
-                </div>
-                <div>
-                  <span className="text-xs text-on-surface-variant block font-medium">Número de Serie / IMEI</span>
-                  <span className="font-mono text-on-surface">{order.deviceSerial || 'N/A'}</span>
-                </div>
-                <div>
-                  <span className="text-xs text-on-surface-variant block font-medium">Clave de Desbloqueo</span>
-                  <span className="font-mono text-on-surface">{order.devicePassword || 'Sin clave'}</span>
-                </div>
-              </div>
-
-              <div className="pt-3 border-t border-outline-variant">
-                <span className="text-xs text-on-surface-variant block font-medium">Falla / Problema Reportado</span>
-                <p className="text-sm text-on-surface mt-1 bg-surface-container-low p-3 rounded-xl">
-                  {order.problemDescription}
-                </p>
-              </div>
-
-              {order.accessories && (
-                <div className="pt-2">
-                  <span className="text-xs text-on-surface-variant block font-medium">Accesorios Recibidos</span>
-                  <p className="text-sm text-on-surface mt-1">{order.accessories}</p>
-                </div>
+              ) : (
+                <p className="text-sm text-on-surface-variant italic">Diagnóstico técnico no disponible aún.</p>
               )}
             </div>
+          </div>
+        </div>
 
-            {/* Timeline History */}
-            <div className="bg-surface border border-outline-variant rounded-2xl p-6 shadow-sm">
-              <h3 className="text-base font-bold text-on-surface mb-4 flex items-center gap-2">
-                <Clock className="w-5 h-5 text-primary" /> Historial de Transiciones de Estado
-              </h3>
+        {/* Estado de Ingreso */}
+        <div className="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/50 p-6 flex flex-col">
+          <h3 className="text-lg font-semibold text-on-surface mb-6 flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary">fact_check</span> Estado de Ingreso
+          </h3>
+          <div className="space-y-3 mb-6">
+            <div className="flex items-center gap-2 text-sm text-on-surface">
+              <span className="material-symbols-outlined text-secondary text-sm">check_circle</span>
+              Información validada al ingreso
+            </div>
+            <div className="flex items-center gap-2 text-sm text-on-surface">
+              <span className="material-symbols-outlined text-outline text-sm">info</span>
+              Accesorios: {order.accessories || 'Ninguno'}
+            </div>
+          </div>
+          <div>
+            <h4 className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-3">Fotos de Ingreso</h4>
+            <div className="bg-surface-container-low h-24 rounded-lg flex items-center justify-center text-on-surface-variant text-sm font-medium border border-dashed border-outline">
+              Sin fotografías registradas
+            </div>
+          </div>
+        </div>
 
-              {history.length === 0 ? (
-                <p className="text-xs text-on-surface-variant">No hay historial registrado aún.</p>
-              ) : (
-                <div className="space-y-4 relative before:absolute before:inset-0 before:left-3 before:w-0.5 before:bg-outline-variant">
+        {/* Actividades y Repuestos (Split) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          {/* Actividades */}
+          <div className="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/50 p-6 flex flex-col">
+            <h3 className="text-lg font-semibold text-on-surface mb-6 flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary">history</span> Actividades
+            </h3>
+            <div className="flex-1 overflow-y-auto pr-2">
+              {loadingHistory ? (
+                <div className="flex justify-center py-8"><div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div></div>
+              ) : errorHistory ? (
+                <p className="text-sm text-error font-medium text-center">Error al cargar historial</p>
+              ) : history && history.length > 0 ? (
+                <div className="relative border-l-2 border-surface-container-highest ml-3 space-y-6 pb-4">
                   {history.map((h) => (
-                    <div key={h.id} className="relative pl-8 text-xs space-y-1">
-                      <div className="absolute left-1.5 top-1.5 w-3 h-3 rounded-full bg-primary border-2 border-surface -translate-x-1/2" />
-                      <div className="font-bold text-on-surface">
-                        Cambio de <span className="text-on-surface-variant">{h.fromStatus}</span> a{' '}
-                        <span className="text-primary">{h.toStatus}</span>
-                      </div>
-                      <div className="text-on-surface-variant">
-                        {new Date(h.createdAt).toLocaleString('es-CO')}
+                    <div key={h.id} className="relative pl-6">
+                      <div className="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-primary border-2 border-surface-container-lowest"></div>
+                      <div className="bg-surface-container-low p-3 rounded-lg text-sm">
+                        <div className="flex justify-between items-start mb-1">
+                          <span className="font-bold text-on-surface">Estado actualizado</span>
+                          <span className="text-xs text-on-surface-variant">
+                            {new Date(h.createdAt).toLocaleTimeString('es-ES', {hour: '2-digit', minute:'2-digit'})}
+                          </span>
+                        </div>
+                        <p className="text-on-surface-variant text-xs">De <span className="font-semibold">{h.fromStatus}</span> a <span className="font-semibold">{h.toStatus}</span></p>
                       </div>
                     </div>
                   ))}
                 </div>
+              ) : (
+                <p className="text-sm text-on-surface-variant text-center italic mt-8">Historial de actividades no disponible.</p>
               )}
             </div>
           </div>
 
-          <div className="space-y-6">
-            <div className="bg-surface border border-outline-variant rounded-2xl p-6 shadow-sm space-y-3">
-              <h3 className="text-base font-bold text-on-surface flex items-center gap-2">
-                <User className="w-5 h-5 text-primary" /> Asignación
-              </h3>
-
-              <div className="text-xs space-y-2">
-                <div>
-                  <span className="text-on-surface-variant block">Cliente Registrado</span>
-                  <span className="font-bold text-on-surface">{order.customerId || 'Cliente General'}</span>
-                </div>
-                <div>
-                  <span className="text-on-surface-variant block">Técnico Asignado</span>
-                  <span className="font-bold text-on-surface">{order.technicianId || 'Sin asignar'}</span>
-                </div>
+          {/* Repuestos */}
+          <div className="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/50 p-6 flex flex-col">
+            <h3 className="text-lg font-semibold text-on-surface mb-6 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary">settings_applications</span> Repuestos
               </div>
+            </h3>
+            <div className="flex-1 flex flex-col items-center justify-center text-center p-4 bg-surface-container-low rounded-lg border border-dashed border-outline">
+              <span className="material-symbols-outlined text-outline text-3xl mb-2 opacity-50">inventory</span>
+              <p className="text-on-surface-variant text-sm font-medium">Listado de repuestos no disponible</p>
+              <p className="text-xs text-outline mt-1 max-w-[200px]">La visualización de repuestos asignados aún no está implementada en el sistema.</p>
+            </div>
+            <div className="mt-4 pt-4 border-t border-outline-variant flex justify-between items-center">
+              <span className="text-sm font-bold text-on-surface-variant">TOTAL REPUESTOS</span>
+              <span className="text-lg font-bold text-on-surface">$ 0.00</span>
             </div>
           </div>
         </div>
-      )}
 
-      {activeTab === 'activities' && (
-        <div className="bg-surface border border-outline-variant rounded-2xl p-6 shadow-sm space-y-6">
-          <h3 className="text-lg font-bold text-on-surface flex items-center gap-2">
-            <ActivityIcon className="w-5 h-5 text-primary" /> Bitácora de Trabajo Técnico
-          </h3>
-
-          <form onSubmit={handleAddActivity} className="flex gap-3">
-            <input
-              type="text"
-              required
-              className="flex-1 bg-surface-container-lowest border border-outline-variant rounded-xl p-3 text-sm focus:border-primary outline-none"
-              placeholder="Escribe una observación de la actividad realizada..."
-              value={activityText}
-              onChange={(e) => setActivityText(e.target.value)}
-            />
-            <button
-              type="submit"
-              disabled={addActivityMutation.isPending}
-              className="bg-primary text-white font-bold px-5 py-3 rounded-xl flex items-center gap-2 hover:bg-primary/90 transition-all disabled:opacity-50"
-            >
-              <Send className="w-4 h-4" /> Registrar
-            </button>
-          </form>
-
-          <div className="space-y-3 pt-4 border-t border-outline-variant">
-            {activities.length === 0 ? (
-              <p className="text-sm text-on-surface-variant text-center py-6">
-                No hay actividades registradas en la bitácora para esta orden.
-              </p>
-            ) : (
-              activities.map((act) => (
-                <div key={act.id} className="p-4 bg-surface-container-low rounded-xl text-sm space-y-1">
-                  <div className="flex justify-between items-center text-xs text-on-surface-variant">
-                    <span className="font-bold text-primary">Técnico ID: {act.technicianId}</span>
-                    <span>{new Date(act.createdAt).toLocaleString('es-CO')}</span>
-                  </div>
-                  <p className="text-on-surface font-medium">{act.description}</p>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      )}
-
-      {activeTab === 'diagnostics' && (
-        <div className="bg-surface border border-outline-variant rounded-2xl p-6 shadow-sm space-y-6">
-          <h3 className="text-lg font-bold text-on-surface flex items-center gap-2">
-            <Wrench className="w-5 h-5 text-primary" /> Informe Diagnóstico de Laboratorio
-          </h3>
-
-          <form onSubmit={handleAddDiagnostic} className="space-y-4 bg-surface-container-low p-5 rounded-2xl">
-            <div>
-              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">
-                Observaciones del Técnico *
-              </label>
-              <input
-                type="text"
-                required
-                className="w-full bg-surface-container-lowest border border-outline-variant rounded-xl p-3 text-sm focus:border-primary outline-none"
-                placeholder="Ej: Equipo presenta humedad en tarjeta principal..."
-                value={diagObservations}
-                onChange={(e) => setDiagObservations(e.target.value)}
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">
-                Fallas Detectadas *
-              </label>
-              <input
-                type="text"
-                required
-                className="w-full bg-surface-container-lowest border border-outline-variant rounded-xl p-3 text-sm focus:border-primary outline-none"
-                placeholder="Ej: Cortocircuito en línea VDD_MAIN, pin de carga sulfatado..."
-                value={diagFaults}
-                onChange={(e) => setDiagFaults(e.target.value)}
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">
-                Acciones Recomendadas *
-              </label>
-              <input
-                type="text"
-                required
-                className="w-full bg-surface-container-lowest border border-outline-variant rounded-xl p-3 text-sm focus:border-primary outline-none"
-                placeholder="Ej: Limpieza ultrasónica y reemplazo de módulo de carga..."
-                value={diagActions}
-                onChange={(e) => setDiagActions(e.target.value)}
-              />
-            </div>
-
-            <div className="flex justify-end">
-              <button
-                type="submit"
-                disabled={addDiagnosticMutation.isPending}
-                className="bg-primary text-white font-bold px-5 py-2.5 rounded-xl flex items-center gap-2 hover:bg-primary/90 transition-all disabled:opacity-50"
-              >
-                <Plus className="w-4 h-4" /> Agregar Diagnóstico
-              </button>
-            </div>
-          </form>
-
-          <div className="space-y-4 pt-4">
-            {diagnostics.length === 0 ? (
-              <p className="text-sm text-on-surface-variant text-center py-6">
-                No hay informes diagnósticos registrados.
-              </p>
-            ) : (
-              diagnostics.map((diag) => (
-                <div key={diag.id} className="border border-outline-variant rounded-2xl p-5 space-y-3 bg-surface">
-                  <div className="flex justify-between items-center text-xs text-on-surface-variant border-b border-outline-variant pb-2">
-                    <span className="font-bold text-primary">Diagnóstico #{diag.id.substring(0, 8)}</span>
-                    <span>{new Date(diag.createdAt).toLocaleString('es-CO')}</span>
-                  </div>
-
-                  <div className="text-sm space-y-2">
-                    <div>
-                      <span className="text-xs font-bold text-on-surface-variant block">Observaciones:</span>
-                      <p className="text-on-surface">{diag.observations}</p>
-                    </div>
-                    <div>
-                      <span className="text-xs font-bold text-on-surface-variant block">Fallas:</span>
-                      <p className="text-error font-medium">{diag.faults}</p>
-                    </div>
-                    <div>
-                      <span className="text-xs font-bold text-on-surface-variant block">Acciones Sugeridas:</span>
-                      <p className="text-primary font-medium">{diag.recommendedActions}</p>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      )}
-
-      {activeTab === 'photos' && (
-        <div className="bg-surface border border-outline-variant rounded-2xl p-6 shadow-sm space-y-6">
-          <h3 className="text-lg font-bold text-on-surface flex items-center gap-2">
-            <Camera className="w-5 h-5 text-primary" /> Registro Fotográfico
-          </h3>
-
-          <form onSubmit={handleUploadPhoto} className="flex flex-wrap items-center gap-4 bg-surface-container-low p-4 rounded-2xl">
-            <select
-              className="bg-surface-container-lowest border border-outline-variant rounded-xl p-2.5 text-xs font-bold outline-none cursor-pointer"
-              value={photoKind}
-              onChange={(e) => setPhotoKind(e.target.value as 'inicial' | 'final')}
-            >
-              <option value="inicial">Foto Inicial (Recepción)</option>
-              <option value="final">Foto Final (Reparado)</option>
-            </select>
-
-            <input
-              type="file"
-              accept="image/*"
-              required
-              onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-              className="text-xs text-on-surface-variant file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer"
-            />
-
-            <button
-              type="submit"
-              disabled={!selectedFile || uploadPhotoMutation.isPending}
-              className="bg-primary text-white font-bold px-5 py-2.5 rounded-xl flex items-center gap-2 hover:bg-primary/90 transition-all disabled:opacity-50 ml-auto"
-            >
-              <Upload className="w-4 h-4" /> Subir Imagen
-            </button>
-          </form>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {photos.length === 0 ? (
-              <p className="text-sm text-on-surface-variant text-center col-span-full py-8">
-                No hay fotografías adjuntas a esta orden de trabajo.
-              </p>
-            ) : (
-              photos.map((ph) => (
-                <div key={ph.id} className="border border-outline-variant rounded-2xl overflow-hidden bg-surface group">
-                  <div className="aspect-video bg-surface-container-high relative overflow-hidden">
-                    <img
-                      src={ph.publicUrl || ph.storagePath}
-                      alt={`Foto ${ph.kind}`}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                    <span className="absolute top-2 left-2 bg-black/70 text-white text-[10px] uppercase font-bold px-2 py-0.5 rounded-full">
-                      {ph.kind}
-                    </span>
-                  </div>
-                  <div className="p-3 text-xs text-on-surface-variant">
-                    {new Date(ph.uploadedAt).toLocaleString('es-CO')}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      )}
-
-      {activeTab === 'exit' && (
-        <div className="bg-surface border border-outline-variant rounded-2xl p-6 shadow-sm space-y-6">
-          <h3 className="text-lg font-bold text-on-surface flex items-center gap-2">
-            <FileCheck className="w-5 h-5 text-primary" /> Registro de Salida y Entrega
-          </h3>
-
-          <form onSubmit={handleExitRegisterSubmit} className="space-y-4 max-w-xl">
-            <div>
-              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">
-                Estado Final del Dispositivo *
-              </label>
-              <input
-                type="text"
-                required
-                className="w-full bg-surface-container-lowest border border-outline-variant rounded-xl p-3 text-sm focus:border-primary outline-none"
-                placeholder="Ej: Entregado funcional al 100%, probado ante cliente"
-                value={exitFinalState}
-                onChange={(e) => setExitFinalState(e.target.value)}
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">
-                Reparaciones Realizadas *
-              </label>
-              <textarea
-                rows={3}
-                required
-                className="w-full bg-surface-container-lowest border border-outline-variant rounded-xl p-3 text-sm focus:border-primary outline-none"
-                placeholder="Describa el trabajo final realizado..."
-                value={exitRepairs}
-                onChange={(e) => setExitRepairs(e.target.value)}
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">
-                Repuestos Utilizados
-              </label>
-              <input
-                type="text"
-                className="w-full bg-surface-container-lowest border border-outline-variant rounded-xl p-3 text-sm focus:border-primary outline-none"
-                placeholder="Ej: Display OLED OEM, Batería 3200mAh"
-                value={exitParts}
-                onChange={(e) => setExitParts(e.target.value)}
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">
-                Observaciones Adicionales
-              </label>
-              <textarea
-                rows={2}
-                className="w-full bg-surface-container-lowest border border-outline-variant rounded-xl p-3 text-sm focus:border-primary outline-none"
-                placeholder="Recomendaciones de cuidado para el cliente..."
-                value={exitObs}
-                onChange={(e) => setExitObs(e.target.value)}
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={exitRegisterMutation.isPending}
-              className="bg-primary text-white font-bold px-6 py-3 rounded-xl flex items-center gap-2 hover:bg-primary/90 transition-all disabled:opacity-50"
-            >
-              <FileCheck className="w-4 h-4" /> Confirmar y Registrar Salida
-            </button>
-          </form>
-        </div>
-      )}
+      </div>
     </div>
   );
 };

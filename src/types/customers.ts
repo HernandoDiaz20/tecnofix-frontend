@@ -1,6 +1,6 @@
 export interface Customer {
   id: string;
-  email: string;
+  email: string | null;
   fullName: string;
   phone: string | null;
   createdAt: string;
@@ -11,6 +11,8 @@ export interface CreateCustomerRequest {
   email?: string | null;
   phone?: string | null;
 }
+
+export type UpdateCustomerRequest = CreateCustomerRequest;
 
 // Para GET /customers/:id/work-orders — snake_case del backend
 export interface CustomerWorkOrder {

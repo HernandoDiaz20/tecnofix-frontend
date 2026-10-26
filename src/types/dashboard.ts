@@ -31,12 +31,32 @@ export interface DashboardWorkOrder {
   id: string;
   guideNumber: string;
   customerId: string | null;
+  technicianId: string | null;
   deviceBrand: string;
   deviceModel: string;
+  deviceSerial: string;
+  problemDescription: string;
+  accessories: string | null;
   currentStatus: 'INGRESADO' | 'EN_REVISION' | 'ESPERANDO_REPUESTO' | 'EN_REPARACION' | 'REPARADO' | 'LISTO_PARA_ENTREGA' | 'ENTREGADO';
   createdAt: string;
   // Propiedades opcionales que envuelve el backend en las relaciones (ej. customer)
   customer?: { fullName: string; email?: string }; 
+}
+
+export interface DashboardWorkOrderHistory {
+  id: string;
+  fromStatus: string;
+  toStatus: string;
+  userId: string | null;
+  createdAt: string;
+}
+
+export interface DashboardWorkOrderDiagnostic {
+  id: string;
+  observations: string;
+  faults: string;
+  recommendedActions: string;
+  createdAt: string;
 }
 
 export interface DashboardAppointment {
