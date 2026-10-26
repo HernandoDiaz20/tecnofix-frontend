@@ -60,6 +60,7 @@ export interface DashboardWorkOrderDiagnostic {
   createdAt: string;
 }
 
+
 export interface DashboardAppointment {
   id: string;
   customerName: string;

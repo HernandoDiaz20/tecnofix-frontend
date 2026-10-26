@@ -4,6 +4,8 @@ export interface Service {
   description?: string | null;
   price: number;
   active: boolean;
+  estimatedPrice?: number;
+  estimatedTimeMinutes?: number;
 }
 
 export interface ServicesResponse {
