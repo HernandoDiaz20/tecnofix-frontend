@@ -39,3 +39,18 @@ export const useUpdatePart = () => {
     },
   });
 };
+
+export const useAssignPartToWorkOrder = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ workOrderId, partId, quantity }: { workOrderId: string; partId: string; quantity: number }) =>
+      adminPartsApi.assignToWorkOrder(workOrderId, { partId, quantity }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: partKeys.all });
+      queryClient.invalidateQueries({ queryKey: ['admin-work-order-detail', variables.workOrderId] });
+      queryClient.invalidateQueries({ queryKey: ['admin-work-order-history', variables.workOrderId] });
+    },
+  });
+};
+

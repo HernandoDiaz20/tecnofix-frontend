@@ -54,7 +54,7 @@ export const useTrackWorkOrder = (guideNumber: string) => {
   return useQuery({
     queryKey: ['track', guideNumber],
     queryFn: () => ApiService.trackWorkOrder(guideNumber),
-    enabled: false, // Disparamos manualmente (o al tener un string válido)
+    enabled: Boolean(guideNumber && guideNumber.trim().length > 0),
     retry: false, // No reintentar automáticamente en 404
   });
 };

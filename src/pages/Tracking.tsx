@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useTrackWorkOrder } from '@/api/hooks';
 import { 
   Search, 
@@ -7,70 +8,130 @@ import {
   Calendar, 
   AlertCircle,
   Wrench,
-  UserCheck
+  Clock,
+  Sparkles,
+  Package
 } from 'lucide-react';
 
+interface TimelineStep {
+  status: string;
+  label: string;
+  time: string;
+  completed: boolean;
+  current: boolean;
+}
+
+const STAGES = [
+  { key: 'ACEPTADA', label: 'Recepción del Dispositivo' },
+  { key: 'EN_REVISION', label: 'Diagnóstico y Revisión Técnica' },
+  { key: 'ESPERANDO_REPUESTO', label: 'En Espera de Repuestos / Insumos' },
+  { key: 'EN_REPARACION', label: 'En Proceso de Reparación' },
+  { key: 'REPARADO', label: 'Reparación Finalizada' },
+  { key: 'LISTO_PARA_ENTREGA', label: 'Listo para Entrega al Cliente' },
+  { key: 'ENTREGADO', label: 'Dispositivo Entregado' },
+];
+
 export const Tracking = () => {
-  const [guideNumber, setGuideNumber] = useState('TF-000245');
-  const [searched, setSearched] = useState(true); // Default true to display example immediately
-  
-  const { data, refetch, isFetching, isError } = useTrackWorkOrder(guideNumber);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialGuide = searchParams.get('guia') || '';
+
+  const [inputGuide, setInputGuide] = useState(initialGuide);
+  const [activeGuide, setActiveGuide] = useState(initialGuide);
+
+  const { data, isLoading, isFetching, isError } = useTrackWorkOrder(activeGuide);
+
+  useEffect(() => {
+    const urlGuide = searchParams.get('guia');
+    if (urlGuide && urlGuide !== activeGuide) {
+      setInputGuide(urlGuide.toUpperCase());
+      setActiveGuide(urlGuide.toUpperCase());
+    }
+  }, [searchParams]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (guideNumber.trim()) {
-      setSearched(true);
-      refetch();
+    const cleanGuide = inputGuide.trim().toUpperCase();
+    if (cleanGuide) {
+      setActiveGuide(cleanGuide);
+      setSearchParams({ guia: cleanGuide });
     }
   };
 
-  // Mock / example data matching Stitch screen
-  const defaultOrder = {
-    guideNumber: guideNumber || 'TF-000245',
-    deviceBrand: 'Apple',
-    deviceModel: 'iPhone 13',
-    deviceSerial: 'F2LZN987Q1',
-    problemDescription: 'Pantalla astillada y el táctil no responde en la zona inferior tras una caída.',
-    diagnosis: 'Se requiere cambio de módulo de pantalla completo. Componentes internos sin daño líquido aparente.',
-    partsUsed: 'Módulo Pantalla Original (OEM) iPhone 13 - Adhesivo de sellado contra agua.',
-    technicianName: 'Carlos M. - Especialista Senior',
-    estimatedDelivery: '23 Ago, 2024 - 17:00 HRS',
-    currentStatus: 'EN_REPARACION',
-    createdAt: '2024-08-21T09:30:00.000Z',
-    receptionPhotos: [
-      'https://images.unsplash.com/photo-1598327105666-5b89351aff97?auto=format&fit=crop&w=400&q=80',
-      'https://images.unsplash.com/photo-1580910051074-3eb694886505?auto=format&fit=crop&w=400&q=80',
-    ],
-    timeline: [
-      { status: 'INGRESADO', label: 'Ingresado', time: '21 Ago, 9:30 AM', completed: true },
-      { status: 'EN_REVISION', label: 'En revisión', time: '21 Ago, 11:15 AM', completed: true },
-      { status: 'DIAGNOSTICADO', label: 'Diagnóstico realizado', time: '21 Ago, 2:30 PM', completed: true },
-      { status: 'ESPERANDO_REPUESTO', label: 'Esperando repuesto', time: '21 Ago, 3:00 PM', completed: true },
-      { status: 'EN_REPARACION', label: 'En reparación', time: 'Actualmente en proceso', current: true },
-      { status: 'REPARADO', label: 'Reparado', time: 'Pendiente' },
-      { status: 'LISTO_PARA_ENTREGA', label: 'Listo para entrega', time: 'Pendiente' },
-      { status: 'ENTREGADO', label: 'Entregado', time: 'Pendiente' },
-    ]
+  const handleQuickSearch = (guide: string) => {
+    setInputGuide(guide);
+    setActiveGuide(guide);
+    setSearchParams({ guia: guide });
   };
 
-  const order = data?.order ? {
-    guideNumber: data.order.guideNumber,
-    deviceBrand: data.order.deviceBrand,
-    deviceModel: data.order.deviceModel,
-    deviceSerial: data.order.deviceSerial,
-    problemDescription: data.order.problemDescription,
-    diagnosis: 'Diagnóstico técnico realizado y en proceso de solución.',
-    partsUsed: 'Repuestos originales garantizados.',
-    technicianName: 'Técnico Especialista TecnoFix',
-    estimatedDelivery: '24-48 Horas hábiles',
-    currentStatus: data.order.currentStatus,
-    createdAt: data.order.createdAt,
-    receptionPhotos: defaultOrder.receptionPhotos,
-    timeline: defaultOrder.timeline
-  } : defaultOrder;
+  const formatTimestamp = (dateStr?: string | null) => {
+    if (!dateStr) return 'Pendiente';
+    try {
+      const d = new Date(dateStr);
+      return d.toLocaleDateString('es-CO', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    } catch {
+      return dateStr;
+    }
+  };
+
+  // Construir línea de tiempo dinámica según el estado actual y el historial
+  const buildTimeline = (): TimelineStep[] => {
+    if (!data?.order) return [];
+
+    const currentStatus = data.order.currentStatus;
+    const history = data.history || [];
+
+    // Mapeo de estados a índice de progreso
+    const statusIndexMap: Record<string, number> = {
+      PENDIENTE: 0,
+      ACEPTADA: 0,
+      INGRESADO: 0,
+      EN_REVISION: 1,
+      ESPERANDO_REPUESTO: 2,
+      EN_REPARACION: 3,
+      REPARADO: 4,
+      LISTO_PARA_ENTREGA: 5,
+      ENTREGADO: 6,
+    };
+
+    const currentIndex = statusIndexMap[currentStatus] ?? 0;
+
+    return STAGES.map((stage, idx) => {
+      // Buscar timestamp en el historial
+      const historyEntry = history.find(
+        (h) => h.toStatus === stage.key || (stage.key === 'ACEPTADA' && h.toStatus === 'INGRESADO')
+      );
+
+      let timeText = 'Pendiente';
+      if (idx === 0) {
+        timeText = formatTimestamp(data.order.createdAt);
+      } else if (historyEntry) {
+        timeText = formatTimestamp(historyEntry.createdAt);
+      } else if (idx < currentIndex) {
+        timeText = 'Completado';
+      } else if (idx === currentIndex) {
+        timeText = 'Actualmente en proceso';
+      }
+
+      return {
+        status: stage.key,
+        label: stage.label,
+        time: timeText,
+        completed: idx < currentIndex || (idx === currentIndex && currentStatus === 'ENTREGADO'),
+        current: idx === currentIndex && currentStatus !== 'ENTREGADO',
+      };
+    });
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
+      case 'PENDIENTE':
+      case 'ACEPTADA':
       case 'INGRESADO':
         return <span className="px-3.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold uppercase border border-blue-200">Ingresado</span>;
       case 'EN_REVISION':
@@ -80,8 +141,9 @@ export const Tracking = () => {
       case 'EN_REPARACION':
         return <span className="px-3.5 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-bold uppercase border border-orange-200 flex items-center gap-1"><Wrench className="w-3.5 h-3.5" /> En Reparación</span>;
       case 'REPARADO':
+        return <span className="px-3.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold uppercase border border-emerald-200 flex items-center gap-1"><Check className="w-3.5 h-3.5" /> Reparado</span>;
       case 'LISTO_PARA_ENTREGA':
-        return <span className="px-3.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold uppercase border border-emerald-200">Listo para Entrega</span>;
+        return <span className="px-3.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold uppercase border border-emerald-300">Listo para Entrega</span>;
       case 'ENTREGADO':
         return <span className="px-3.5 py-1 rounded-full bg-slate-100 text-slate-800 text-xs font-bold uppercase border border-slate-300">Entregado</span>;
       default:
@@ -89,16 +151,18 @@ export const Tracking = () => {
     }
   };
 
+  const timeline = buildTimeline();
+
   return (
     <div className="max-w-container-max mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
       {/* Header & Search Bar */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6">
         <div>
           <h1 className="text-3xl sm:text-4xl font-extrabold text-[#191C1E] tracking-tight mb-2">
-            Estado de tu Dispositivo
+            Seguimiento de Reparación
           </h1>
           <p className="text-base text-[#434655]">
-            Rastrea el progreso y trazabilidad de tu reparación en tiempo real sin necesidad de iniciar sesión.
+            Rastrea el progreso y trazabilidad de tu dispositivo en tiempo real sin necesidad de iniciar sesión.
           </p>
         </div>
 
@@ -107,36 +171,72 @@ export const Tracking = () => {
             <Search className="w-5 h-5 text-[#737686] absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Ingresa tu número de orden"
-              value={guideNumber}
-              onChange={(e) => setGuideNumber(e.target.value.toUpperCase())}
+              placeholder="Ingresa tu número de guía"
+              value={inputGuide}
+              onChange={(e) => setInputGuide(e.target.value.toUpperCase())}
               className="w-full pl-11 pr-4 py-3 bg-white border border-[#E0E3E5] rounded-xl text-sm font-mono text-[#191C1E] uppercase focus:outline-none focus:border-primary shadow-sm"
             />
           </div>
           <button
             type="submit"
             disabled={isFetching}
-            className="bg-primary hover:bg-[#003EA8] text-white px-5 py-3 rounded-xl text-sm font-semibold shadow-sm transition-colors flex-shrink-0"
+            className="bg-primary hover:bg-[#003EA8] text-white px-5 py-3 rounded-xl text-sm font-semibold shadow-sm transition-colors flex-shrink-0 disabled:opacity-60"
           >
             {isFetching ? 'Buscando...' : 'Consultar'}
           </button>
         </form>
       </div>
 
+      {/* Sugerencias Rápidas para Probar */}
+      {!activeGuide && (
+        <div className="bg-[#F7F9FB] border border-[#E0E3E5] rounded-2xl p-6 mb-8 text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-[#191C1E]">¿Tienes una orden en el taller?</p>
+              <p className="text-xs text-[#737686]">Ingresa el código que te entregamos en el comprobante físico o prueba con una orden activa:</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {['3C7B2778', 'B1391A37', '9C7A06E9'].map((demoCode) => (
+              <button
+                key={demoCode}
+                onClick={() => handleQuickSearch(demoCode)}
+                className="px-3 py-1.5 bg-white hover:bg-slate-50 border border-[#E0E3E5] rounded-lg text-xs font-mono font-semibold text-primary transition-colors shadow-2xs"
+              >
+                {demoCode}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Alerta de Error: Guía no encontrada */}
       {isError && (
         <div className="p-5 bg-red-50 text-red-700 rounded-2xl border border-red-200 mb-8 flex items-center gap-3">
           <AlertCircle className="w-5 h-5 flex-shrink-0" />
           <p className="text-sm">
-            No se encontró ninguna orden asociada a la guía <strong>{guideNumber}</strong>. Revisa el código o consulta con soporte.
+            No se encontró ninguna orden asociada a la guía <strong>{activeGuide}</strong>. Verifica que el código esté bien escrito o consulta directamente con el taller.
           </p>
         </div>
       )}
 
-      {searched && (
+      {/* Cargando */}
+      {isLoading && (
+        <div className="py-20 text-center">
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-sm text-[#737686] font-medium">Buscando información de tu dispositivo en el taller...</p>
+        </div>
+      )}
+
+      {/* Detalle de la Orden Real */}
+      {data?.order && !isLoading && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Left Column: Tracker (8 cols) */}
+          {/* Columna Izquierda: Información y Línea de Tiempo (8 cols) */}
           <div className="lg:col-span-8 flex flex-col gap-6">
-            {/* Status Banner Card */}
+            {/* Tarjeta de Encabezado de la Orden */}
             <div className="bg-white rounded-2xl shadow-sm border border-[#E0E3E5] p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div className="flex items-center gap-4">
                 <div className="w-16 h-16 bg-[#F2F4F6] text-primary rounded-2xl flex items-center justify-center flex-shrink-0">
@@ -144,32 +244,33 @@ export const Tracking = () => {
                 </div>
                 <div>
                   <h2 className="text-xl sm:text-2xl font-bold text-[#191C1E]">
-                    {order.deviceBrand} {order.deviceModel}
+                    {data.order.deviceBrand} {data.order.deviceModel}
                   </h2>
                   <p className="text-xs text-[#737686] font-mono mt-0.5">
-                    Guía: {order.guideNumber} • Serial: {order.deviceSerial}
+                    Guía: <strong className="text-primary">{data.order.guideNumber}</strong> • Serial: {data.order.deviceSerial}
                   </p>
                 </div>
               </div>
 
-              <div>{getStatusBadge(order.currentStatus)}</div>
+              <div>{getStatusBadge(data.order.currentStatus)}</div>
             </div>
 
-            {/* Timeline Card */}
+            {/* Tarjeta de Línea de Tiempo */}
             <div className="bg-white rounded-2xl shadow-sm border border-[#E0E3E5] p-6 sm:p-8">
-              <h3 className="text-lg font-bold text-[#191C1E] mb-8 pb-3 border-b border-[#E0E3E5]">
-                Historial de Servicio
+              <h3 className="text-lg font-bold text-[#191C1E] mb-8 pb-3 border-b border-[#E0E3E5] flex items-center justify-between">
+                <span>Historial de Servicio en Taller</span>
+                <span className="text-xs font-normal text-[#737686]">Actualizado en tiempo real</span>
               </h3>
 
               <div className="relative pl-3">
-                {/* Vertical Line */}
+                {/* Línea vertical */}
                 <div className="absolute left-[29px] top-4 bottom-6 w-0.5 bg-[#E6E8EA]" />
 
-                {order.timeline.map((step, idx) => (
+                {timeline.map((step, idx) => (
                   <div key={idx} className="relative flex items-start gap-4 mb-7 last:mb-0">
-                    {/* Step Circle Indicator */}
+                    {/* Indicador de Estado */}
                     {step.completed ? (
-                      <div className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center z-10 shadow-sm flex-shrink-0">
+                      <div className="w-9 h-9 rounded-full bg-emerald-600 text-white flex items-center justify-center z-10 shadow-sm flex-shrink-0">
                         <Check className="w-5 h-5 stroke-[2.5]" />
                       </div>
                     ) : step.current ? (
@@ -180,7 +281,7 @@ export const Tracking = () => {
                       <div className="w-9 h-9 rounded-full bg-[#ECEEF0] border-2 border-[#E0E3E5] flex items-center justify-center z-10 flex-shrink-0" />
                     )}
 
-                    {/* Step Text */}
+                    {/* Texto del paso */}
                     <div className="pt-1.5 flex-1">
                       <p
                         className={`text-sm font-bold ${
@@ -201,79 +302,65 @@ export const Tracking = () => {
             </div>
           </div>
 
-          {/* Right Column: Details & Photos (4 cols) */}
+          {/* Columna Derecha: Detalles del Diagnóstico y Cita (4 cols) */}
           <div className="lg:col-span-4 flex flex-col gap-6">
-            {/* Technician & Order Details */}
             <div className="bg-white rounded-2xl shadow-sm border border-[#E0E3E5] p-6">
               <h3 className="text-xs font-bold text-[#434655] uppercase tracking-wider mb-4 border-b border-[#E0E3E5] pb-2">
                 Detalles de la Orden
               </h3>
 
-              {/* Technician Info */}
-              <div className="flex items-center gap-3 mb-6 p-3 bg-[#F7F9FB] rounded-xl border border-[#E0E3E5]">
-                <div className="w-11 h-11 rounded-full bg-primary/10 text-primary flex items-center justify-center">
-                  <UserCheck className="w-6 h-6" />
-                </div>
-                <div>
-                  <p className="text-xs text-[#737686]">Técnico Asignado</p>
-                  <p className="text-sm font-bold text-[#191C1E]">{order.technicianName}</p>
-                </div>
-              </div>
-
-              {/* Diagnosis breakdown */}
+              {/* Falla reportada */}
               <div className="space-y-4">
                 <div>
-                  <p className="text-xs font-bold text-[#191C1E]">Problema Reportado</p>
-                  <p className="text-xs text-[#434655] mt-1 bg-[#F7F9FB] p-2.5 rounded-xl border border-[#E0E3E5]/60">
-                    {order.problemDescription}
+                  <p className="text-xs font-bold text-[#191C1E]">Falla / Síntoma Reportado</p>
+                  <p className="text-xs text-[#434655] mt-1 bg-[#F7F9FB] p-3 rounded-xl border border-[#E0E3E5]/60 leading-relaxed">
+                    {data.order.problemDescription || 'Sin descripción'}
                   </p>
                 </div>
 
+                {/* Accesorios */}
+                {data.order.accessories && (
+                  <div>
+                    <p className="text-xs font-bold text-[#191C1E]">Accesorios Recibidos</p>
+                    <p className="text-xs text-[#434655] mt-1 bg-[#F7F9FB] p-2.5 rounded-xl border border-[#E0E3E5]/60">
+                      {data.order.accessories}
+                    </p>
+                  </div>
+                )}
+
+                {/* Fecha de ingreso */}
                 <div>
-                  <p className="text-xs font-bold text-[#191C1E]">Diagnóstico Oficial</p>
-                  <p className="text-xs text-[#434655] mt-1 bg-[#F7F9FB] p-2.5 rounded-xl border border-[#E0E3E5]/60">
-                    {order.diagnosis}
-                  </p>
+                  <p className="text-xs font-bold text-[#191C1E]">Fecha de Ingreso al Taller</p>
+                  <div className="flex items-center gap-2 mt-1 text-slate-700">
+                    <Clock className="w-4 h-4 text-[#737686]" />
+                    <span className="text-xs">{formatTimestamp(data.order.createdAt)}</span>
+                  </div>
                 </div>
 
-                <div>
-                  <p className="text-xs font-bold text-[#191C1E]">Repuestos Utilizados</p>
-                  <p className="text-xs text-[#434655] mt-1">{order.partsUsed}</p>
-                </div>
-              </div>
-
-              {/* Estimated Delivery */}
-              <div className="mt-6 pt-4 border-t border-[#E0E3E5]">
-                <p className="text-xs font-bold text-[#191C1E]">Fecha Estimada de Entrega</p>
-                <div className="flex items-center gap-2 mt-1.5 text-primary">
-                  <Calendar className="w-4 h-4" />
-                  <span className="text-sm font-bold">{order.estimatedDelivery}</span>
-                </div>
+                {/* Compromiso / Cita */}
+                {data.order.scheduledTime && (
+                  <div className="pt-3 border-t border-[#E0E3E5]">
+                    <p className="text-xs font-bold text-[#191C1E]">Cita / Entrega Estimada</p>
+                    <div className="flex items-center gap-2 mt-1.5 text-primary">
+                      <Calendar className="w-4 h-4" />
+                      <span className="text-sm font-bold">{formatTimestamp(data.order.scheduledTime)}</span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Photos Grid */}
-            <div className="bg-white rounded-2xl shadow-sm border border-[#E0E3E5] p-6">
-              <h3 className="text-xs font-bold text-[#434655] uppercase tracking-wider mb-4 border-b border-[#E0E3E5] pb-2">
-                Estado de Recepción
-              </h3>
-              <div className="grid grid-cols-2 gap-3">
-                {order.receptionPhotos.map((img, idx) => (
-                  <div
-                    key={idx}
-                    className="aspect-square rounded-xl overflow-hidden border border-[#E0E3E5] relative group"
-                  >
-                    <img
-                      src={img}
-                      alt={`Foto recepción ${idx + 1}`}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
-                ))}
+            {/* Garantía y Compromiso de Servicio */}
+            <div className="bg-linear-to-br from-[#0052D4]/5 to-[#4364F7]/5 rounded-2xl border border-primary/20 p-5">
+              <div className="flex items-start gap-3">
+                <Package className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs font-bold text-[#191C1E]">Servicio Técnico Garantizado</p>
+                  <p className="text-xs text-[#434655] mt-1 leading-relaxed">
+                    Toda reparación incluye garantía en repuestos originales y mano de obra calificada. Consulta tus documentos al retirar el equipo.
+                  </p>
+                </div>
               </div>
-              <p className="text-xs text-[#737686] mt-3 text-center">
-                Fotografías tomadas al ingresar el dispositivo.
-              </p>
             </div>
           </div>
         </div>

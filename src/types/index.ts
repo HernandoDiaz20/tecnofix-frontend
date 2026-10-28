@@ -87,6 +87,8 @@ export interface WorkOrder {
   currentStatus: OrderStatus;
   createdAt: string;
   updatedAt?: string;
+  scheduledTime?: string | null;
+  assignedTime?: string | null;
   appointmentId?: string | null;
 }
 
