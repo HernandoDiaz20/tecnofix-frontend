@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTrackWorkOrder } from '@/api/hooks';
 import { 
@@ -285,7 +285,7 @@ export const Tracking: React.FC = () => {
         </div>
       )}
 
-      {/* Estado de Carga */}
+      {/* Cargando */}
       {isLoading && (
         <div className="py-20 text-center">
           <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
@@ -296,9 +296,9 @@ export const Tracking: React.FC = () => {
       {/* Detalle de la Orden Real */}
       {order && !isLoading && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Left Column: Tracker (8 cols) */}
+          {/* Columna Izquierda: Información y Línea de Tiempo (8 cols) */}
           <div className="lg:col-span-8 flex flex-col gap-6">
-            {/* Status Banner Card */}
+            {/* Tarjeta de Encabezado de la Orden */}
             <div className="bg-white rounded-2xl shadow-sm border border-[#E0E3E5] p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div className="flex items-center gap-4">
                 <div className="w-16 h-16 bg-[#F2F4F6] text-primary rounded-2xl flex items-center justify-center flex-shrink-0">
@@ -306,7 +306,7 @@ export const Tracking: React.FC = () => {
                 </div>
                 <div>
                   <h2 className="text-xl sm:text-2xl font-bold text-[#191C1E]">
-                    {order.deviceBrand} {order.deviceModel}
+                    {data.order.deviceBrand} {data.order.deviceModel}
                   </h2>
                   <p className="text-xs text-[#737686] font-mono mt-0.5">
                     Guía: <strong className="text-primary">{order.guideNumber}</strong> • Serial: {order.deviceSerial || 'No registrado'}
@@ -319,10 +319,10 @@ export const Tracking: React.FC = () => {
                 </div>
               </div>
 
-              <div>{getStatusBadge(order.currentStatus)}</div>
+              <div>{getStatusBadge(data.order.currentStatus)}</div>
             </div>
 
-            {/* Timeline Card */}
+            {/* Tarjeta de Línea de Tiempo */}
             <div className="bg-white rounded-2xl shadow-sm border border-[#E0E3E5] p-6 sm:p-8">
               <div className="flex justify-between items-center mb-8 pb-3 border-b border-[#E0E3E5]">
                 <h3 className="text-lg font-bold text-[#191C1E] flex items-center gap-2">
@@ -390,7 +390,6 @@ export const Tracking: React.FC = () => {
 
           {/* Right Column: Details & Information (4 cols) */}
           <div className="lg:col-span-4 flex flex-col gap-6">
-            {/* Technician & Order Details */}
             <div className="bg-white rounded-2xl shadow-sm border border-[#E0E3E5] p-6">
               <h3 className="text-xs font-bold text-[#434655] uppercase tracking-wider mb-4 border-b border-[#E0E3E5] pb-2">
                 Detalles de la Orden
@@ -425,6 +424,7 @@ export const Tracking: React.FC = () => {
                   </p>
                 </div>
 
+                {/* Fecha de ingreso */}
                 <div>
                   <p className="text-xs font-bold text-[#191C1E]">Resumen de Avance</p>
                   <p className="text-xs text-primary font-medium mt-1 bg-primary/5 p-2.5 rounded-xl border border-primary/20 flex items-center gap-1.5">
@@ -432,7 +432,6 @@ export const Tracking: React.FC = () => {
                     {getStatusSummaryText(order.currentStatus)}
                   </p>
                 </div>
-              </div>
 
               {/* Creation Date */}
               <div className="mt-6 pt-4 border-t border-[#E0E3E5]">
@@ -441,6 +440,16 @@ export const Tracking: React.FC = () => {
                   <Calendar className="w-4 h-4" />
                   <span className="text-sm font-bold">{formatDateTime(order.createdAt)}</span>
                 </div>
+                {/* Compromiso / Cita */}
+                {data.order.scheduledTime && (
+                  <div className="pt-3 border-t border-[#E0E3E5]">
+                    <p className="text-xs font-bold text-[#191C1E]">Cita / Entrega Estimada</p>
+                    <div className="flex items-center gap-2 mt-1.5 text-primary">
+                      <Calendar className="w-4 h-4" />
+                      <span className="text-sm font-bold">{formatTimestamp(data.order.scheduledTime)}</span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Scheduled / Appointment Date */}
@@ -457,6 +466,8 @@ export const Tracking: React.FC = () => {
 
             {/* Servicio Técnico Garantizado */}
             <div className="bg-gradient-to-br from-[#0052D4]/5 to-[#4364F7]/5 rounded-2xl border border-primary/20 p-5">
+            {/* Garantía y Compromiso de Servicio */}
+            <div className="bg-linear-to-br from-[#0052D4]/5 to-[#4364F7]/5 rounded-2xl border border-primary/20 p-5">
               <div className="flex items-start gap-3">
                 <Package className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                 <div>

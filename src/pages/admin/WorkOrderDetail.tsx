@@ -9,6 +9,9 @@ import {
 import { useAdminTechnicians } from '@/api/admin/technician-hooks';
 import { AssignTechnicianDialog } from '@/components/admin/work-orders/AssignTechnicianDialog';
 import { UpdateStatusDialog } from '@/components/admin/work-orders/UpdateStatusDialog';
+import { UpdateOrderStatusDialog } from '@/components/admin/work-orders/UpdateOrderStatusDialog';
+import { AddPartDialog } from '@/components/admin/work-orders/AddPartDialog';
+import { RegisterExitDialog } from '@/components/admin/work-orders/RegisterExitDialog';
 
 // Secuencia operativa oficial del backend (excluyendo el estado ficticio INGRESADO)
 const STATUS_FLOW = [
@@ -44,6 +47,8 @@ export const WorkOrderDetail: React.FC = () => {
 
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState<boolean>(false);
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState<boolean>(false);
+  const [isAddPartDialogOpen, setIsAddPartDialogOpen] = useState<boolean>(false);
+  const [isRegisterExitDialogOpen, setIsRegisterExitDialogOpen] = useState<boolean>(false);
 
   if (loadingOrder) {
     return (
@@ -121,10 +126,18 @@ export const WorkOrderDetail: React.FC = () => {
             <span className="material-symbols-outlined text-sm">engineering</span>
             {order.technicianId ? 'Cambiar Técnico' : 'Asignar Técnico'}
           </button>
-          <button className="px-4 py-2 border border-outline-variant rounded-lg text-sm font-semibold hover:bg-surface-container transition-colors flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setIsAddPartDialogOpen(true)}
+            className="px-4 py-2 border border-outline-variant rounded-lg text-sm font-semibold hover:bg-surface-container transition-colors flex items-center gap-2 text-on-surface"
+          >
             <span className="material-symbols-outlined text-sm">inventory_2</span> Agregar Repuesto
           </button>
-          <button className="px-4 py-2 border border-outline-variant rounded-lg text-sm font-semibold hover:bg-surface-container transition-colors flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setIsRegisterExitDialogOpen(true)}
+            className="px-4 py-2 border border-outline-variant rounded-lg text-sm font-semibold hover:bg-surface-container transition-colors flex items-center gap-2 text-on-surface"
+          >
             <span className="material-symbols-outlined text-sm">check_circle</span> Registrar Entrega
           </button>
           <button 
@@ -346,6 +359,18 @@ export const WorkOrderDetail: React.FC = () => {
       <UpdateStatusDialog
         isOpen={isStatusDialogOpen}
         onOpenChange={setIsStatusDialogOpen}
+        order={order}
+      />
+
+      <AddPartDialog
+        isOpen={isAddPartDialogOpen}
+        onOpenChange={setIsAddPartDialogOpen}
+        order={order}
+      />
+
+      <RegisterExitDialog
+        isOpen={isRegisterExitDialogOpen}
+        onOpenChange={setIsRegisterExitDialogOpen}
         order={order}
       />
     </div>
