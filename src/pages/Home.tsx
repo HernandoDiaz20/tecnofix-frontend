@@ -190,7 +190,7 @@ export const Home = () => {
                     Ver detalles
                   </Link>
                   <a
-                    href={`https://wa.me/573001234567?text=${encodeURIComponent(
+                    href={`https://wa.me/${import.meta.env.VITE_WHATSAPP_NUMBER}?text=${encodeURIComponent(
                       `Hola TecnoFix, estoy interesado en comprar el ${prod.name} ($${prod.price.toLocaleString('es-CO')} COP).`
                     )}`}
                     target="_blank"

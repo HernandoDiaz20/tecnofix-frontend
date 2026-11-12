@@ -9,7 +9,6 @@ import {
 import { useAdminTechnicians } from '@/api/admin/technician-hooks';
 import { AssignTechnicianDialog } from '@/components/admin/work-orders/AssignTechnicianDialog';
 import { UpdateStatusDialog } from '@/components/admin/work-orders/UpdateStatusDialog';
-import { UpdateOrderStatusDialog } from '@/components/admin/work-orders/UpdateOrderStatusDialog';
 import { AddPartDialog } from '@/components/admin/work-orders/AddPartDialog';
 import { RegisterExitDialog } from '@/components/admin/work-orders/RegisterExitDialog';
 

@@ -432,6 +432,7 @@ export const Tracking: React.FC = () => {
                     {getStatusSummaryText(order.currentStatus)}
                   </p>
                 </div>
+              </div>
 
               {/* Creation Date */}
               <div className="mt-6 pt-4 border-t border-[#E0E3E5]">
@@ -440,16 +441,6 @@ export const Tracking: React.FC = () => {
                   <Calendar className="w-4 h-4" />
                   <span className="text-sm font-bold">{formatDateTime(order.createdAt)}</span>
                 </div>
-                {/* Compromiso / Cita */}
-                {data.order.scheduledTime && (
-                  <div className="pt-3 border-t border-[#E0E3E5]">
-                    <p className="text-xs font-bold text-[#191C1E]">Cita / Entrega Estimada</p>
-                    <div className="flex items-center gap-2 mt-1.5 text-primary">
-                      <Calendar className="w-4 h-4" />
-                      <span className="text-sm font-bold">{formatTimestamp(data.order.scheduledTime)}</span>
-                    </div>
-                  </div>
-                )}
               </div>
 
               {/* Scheduled / Appointment Date */}
@@ -466,8 +457,6 @@ export const Tracking: React.FC = () => {
 
             {/* Servicio Técnico Garantizado */}
             <div className="bg-gradient-to-br from-[#0052D4]/5 to-[#4364F7]/5 rounded-2xl border border-primary/20 p-5">
-            {/* Garantía y Compromiso de Servicio */}
-            <div className="bg-linear-to-br from-[#0052D4]/5 to-[#4364F7]/5 rounded-2xl border border-primary/20 p-5">
               <div className="flex items-start gap-3">
                 <Package className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                 <div>

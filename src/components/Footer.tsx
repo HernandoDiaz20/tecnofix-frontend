@@ -45,7 +45,7 @@ export const Footer = () => {
               </li>
               <li>
                 <a
-                  href="https://wa.me/573001234567"
+                  href={`https://wa.me/${import.meta.env.VITE_WHATSAPP_NUMBER}`}
                   target="_blank"
                   rel="noreferrer"
                   className="hover:text-primary transition-colors flex items-center gap-1.5"

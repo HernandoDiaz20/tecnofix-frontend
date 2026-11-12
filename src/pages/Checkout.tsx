@@ -34,8 +34,7 @@ export const Checkout = () => {
   const onSubmit = (values: CheckoutFormValues) => {
     if (!product) return;
     
-    // Asumimos un teléfono de WhatsApp genérico de la empresa
-    const whatsappCompanyPhone = '+573001234567'; 
+    const whatsappCompanyPhone = import.meta.env.VITE_WHATSAPP_NUMBER || '';
     
     const message = buildPurchaseMessage(
       { name: values.name, phone: values.phone, address: values.address },
