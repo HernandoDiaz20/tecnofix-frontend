@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAdminWorkOrders, useAdminAppointments } from '@/api/admin-hooks';
 import { useAdminTechnicians } from '@/api/admin/technician-hooks';
 import { AssignTechnicianDialog } from '@/components/admin/work-orders/AssignTechnicianDialog';
+import { UpdateStatusDialog } from '@/components/admin/work-orders/UpdateStatusDialog';
 import type { DashboardWorkOrder } from '@/types/dashboard';
 
 export const WorkOrders: React.FC = () => {
@@ -19,10 +20,13 @@ export const WorkOrders: React.FC = () => {
   const { data: techData } = useAdminTechnicians();
   const technicians = techData?.items || [];
 
-  // Dropdown menu & dialog state
+  // Dropdown menu & dialog states
   const [menuOpenOrderId, setMenuOpenOrderId] = useState<string | null>(null);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState<boolean>(false);
   const [selectedOrderForAssign, setSelectedOrderForAssign] = useState<DashboardWorkOrder | null>(null);
+
+  const [isStatusDialogOpen, setIsStatusDialogOpen] = useState<boolean>(false);
+  const [selectedOrderForStatus, setSelectedOrderForStatus] = useState<DashboardWorkOrder | null>(null);
 
   const getCustomerName = (order: DashboardWorkOrder) => {
     if (order.customer?.fullName) return order.customer.fullName;
@@ -42,22 +46,24 @@ export const WorkOrders: React.FC = () => {
   const getStatusBadge = (status: DashboardWorkOrder['currentStatus']) => {
     switch (status) {
       case 'PENDIENTE':
-        return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-surface-container-highest text-on-surface">Pendiente</span>;
+        return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-surface-container-highest text-on-surface border border-outline-variant">Pendiente</span>;
       case 'ACEPTADA':
-        return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-container text-on-primary-container">Aceptada</span>;
+        return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary-container text-on-primary-container border border-primary/20">Aceptada</span>;
       case 'INGRESADO':
       case 'EN_REVISION':
-        return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-container text-on-primary-container">En Diagnóstico</span>;
+        return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">En Revisión</span>;
       case 'ESPERANDO_REPUESTO':
-        return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-surface-container-highest text-on-surface">Esperando Pieza</span>;
+        return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">Esperando Repuesto</span>;
       case 'EN_REPARACION':
-        return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-container text-on-primary-container">En Reparación</span>;
+        return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300">En Reparación</span>;
       case 'REPARADO':
+        return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">Reparado</span>;
       case 'LISTO_PARA_ENTREGA':
+        return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300">Listo para Entrega</span>;
       case 'ENTREGADO':
-        return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-secondary text-on-secondary">Completado</span>;
+        return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200">Entregado</span>;
       default:
-        return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-surface-container-highest text-on-surface">Desconocido</span>;
+        return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-surface-container-highest text-on-surface">{status}</span>;
     }
   };
 
@@ -69,6 +75,11 @@ export const WorkOrders: React.FC = () => {
   const handleOpenAssign = (order: DashboardWorkOrder) => {
     setSelectedOrderForAssign(order);
     setIsAssignDialogOpen(true);
+  };
+
+  const handleOpenStatus = (order: DashboardWorkOrder) => {
+    setSelectedOrderForStatus(order);
+    setIsStatusDialogOpen(true);
   };
 
   return (
@@ -95,7 +106,6 @@ export const WorkOrders: React.FC = () => {
               <option value="">Todos</option>
               <option value="PENDIENTE">Pendiente</option>
               <option value="ACEPTADA">Aceptada</option>
-              <option value="INGRESADO">Ingresado</option>
               <option value="EN_REVISION">En Revisión</option>
               <option value="ESPERANDO_REPUESTO">Esperando Repuesto</option>
               <option value="EN_REPARACION">En Reparación</option>
@@ -192,7 +202,17 @@ export const WorkOrders: React.FC = () => {
                             className="fixed inset-0 z-20" 
                             onClick={() => setMenuOpenOrderId(null)} 
                           />
-                          <div className="absolute right-6 top-10 z-30 w-48 bg-surface border border-outline-variant rounded-xl shadow-lg py-1.5 text-left text-sm animate-in fade-in zoom-in-95 duration-100">
+                          <div className="absolute right-6 top-10 z-30 w-52 bg-surface border border-outline-variant rounded-xl shadow-lg py-1.5 text-left text-sm animate-in fade-in zoom-in-95 duration-100">
+                            <button
+                              onClick={() => {
+                                setMenuOpenOrderId(null);
+                                handleOpenStatus(order);
+                              }}
+                              className="w-full px-4 py-2.5 flex items-center gap-2.5 text-on-surface hover:bg-surface-container-high transition-colors"
+                            >
+                              <span className="material-symbols-outlined text-base text-primary">sync</span>
+                              <span>Actualizar estado</span>
+                            </button>
                             <button
                               onClick={() => {
                                 setMenuOpenOrderId(null);
@@ -255,6 +275,13 @@ export const WorkOrders: React.FC = () => {
         isOpen={isAssignDialogOpen}
         onOpenChange={setIsAssignDialogOpen}
         order={selectedOrderForAssign}
+      />
+
+      {/* Update Status Modal */}
+      <UpdateStatusDialog
+        isOpen={isStatusDialogOpen}
+        onOpenChange={setIsStatusDialogOpen}
+        order={selectedOrderForStatus}
       />
     </>
   );

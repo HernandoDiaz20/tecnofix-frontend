@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useTrackWorkOrder } from '@/api/hooks';
 import { 
   Search, 
@@ -7,87 +8,214 @@ import {
   Calendar, 
   AlertCircle,
   Wrench,
-  UserCheck
+  UserCheck,
+  Clock,
+  Sparkles
 } from 'lucide-react';
 
-export const Tracking = () => {
-  const [guideNumber, setGuideNumber] = useState('TF-000245');
-  const [searched, setSearched] = useState(true); // Default true to display example immediately
-  
-  const { data, refetch, isFetching, isError } = useTrackWorkOrder(guideNumber);
+const STATUS_LABELS: Record<string, string> = {
+  PENDIENTE: 'Solicitud Registrada',
+  ACEPTADA: 'Orden Aceptada en Taller',
+  INGRESADO: 'Orden Recibida',
+  EN_REVISION: 'En Revisión y Diagnóstico',
+  ESPERANDO_REPUESTO: 'Esperando Repuesto',
+  EN_REPARACION: 'En Reparación',
+  REPARADO: 'Reparado y Probado',
+  LISTO_PARA_ENTREGA: 'Listo para Entrega',
+  ENTREGADO: 'Dispositivo Entregado',
+};
+
+const formatDateTime = (dateStr?: string | null) => {
+  if (!dateStr) return '';
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('es-ES', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    });
+  } catch {
+    return dateStr;
+  }
+};
+
+export const Tracking: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const initialGuide = searchParams.get('guia') || searchParams.get('guide') || '';
+
+  const [guideInput, setGuideInput] = useState(initialGuide);
+  const [searchedGuide, setSearchedGuide] = useState(initialGuide);
+
+  const { data, refetch, isFetching, isError } = useTrackWorkOrder(searchedGuide);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (guideNumber.trim()) {
-      setSearched(true);
-      refetch();
+    const cleanGuide = guideInput.trim().toUpperCase();
+    if (cleanGuide) {
+      setSearchedGuide(cleanGuide);
+      if (searchedGuide === cleanGuide) {
+        refetch();
+      }
     }
   };
-
-  // Mock / example data matching Stitch screen
-  const defaultOrder = {
-    guideNumber: guideNumber || 'TF-000245',
-    deviceBrand: 'Apple',
-    deviceModel: 'iPhone 13',
-    deviceSerial: 'F2LZN987Q1',
-    problemDescription: 'Pantalla astillada y el táctil no responde en la zona inferior tras una caída.',
-    diagnosis: 'Se requiere cambio de módulo de pantalla completo. Componentes internos sin daño líquido aparente.',
-    partsUsed: 'Módulo Pantalla Original (OEM) iPhone 13 - Adhesivo de sellado contra agua.',
-    technicianName: 'Carlos M. - Especialista Senior',
-    estimatedDelivery: '23 Ago, 2024 - 17:00 HRS',
-    currentStatus: 'EN_REPARACION',
-    createdAt: '2024-08-21T09:30:00.000Z',
-    receptionPhotos: [
-      'https://images.unsplash.com/photo-1598327105666-5b89351aff97?auto=format&fit=crop&w=400&q=80',
-      'https://images.unsplash.com/photo-1580910051074-3eb694886505?auto=format&fit=crop&w=400&q=80',
-    ],
-    timeline: [
-      { status: 'INGRESADO', label: 'Ingresado', time: '21 Ago, 9:30 AM', completed: true },
-      { status: 'EN_REVISION', label: 'En revisión', time: '21 Ago, 11:15 AM', completed: true },
-      { status: 'DIAGNOSTICADO', label: 'Diagnóstico realizado', time: '21 Ago, 2:30 PM', completed: true },
-      { status: 'ESPERANDO_REPUESTO', label: 'Esperando repuesto', time: '21 Ago, 3:00 PM', completed: true },
-      { status: 'EN_REPARACION', label: 'En reparación', time: 'Actualmente en proceso', current: true },
-      { status: 'REPARADO', label: 'Reparado', time: 'Pendiente' },
-      { status: 'LISTO_PARA_ENTREGA', label: 'Listo para entrega', time: 'Pendiente' },
-      { status: 'ENTREGADO', label: 'Entregado', time: 'Pendiente' },
-    ]
-  };
-
-  const order = data?.order ? {
-    guideNumber: data.order.guideNumber,
-    deviceBrand: data.order.deviceBrand,
-    deviceModel: data.order.deviceModel,
-    deviceSerial: data.order.deviceSerial,
-    problemDescription: data.order.problemDescription,
-    diagnosis: 'Diagnóstico técnico realizado y en proceso de solución.',
-    partsUsed: 'Repuestos originales garantizados.',
-    technicianName: 'Técnico Especialista TecnoFix',
-    estimatedDelivery: '24-48 Horas hábiles',
-    currentStatus: data.order.currentStatus,
-    createdAt: data.order.createdAt,
-    receptionPhotos: defaultOrder.receptionPhotos,
-    timeline: defaultOrder.timeline
-  } : defaultOrder;
 
   const getStatusBadge = (status: string) => {
     switch (status) {
+      case 'PENDIENTE':
+        return (
+          <span className="px-3.5 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold uppercase border border-slate-300">
+            Pendiente
+          </span>
+        );
+      case 'ACEPTADA':
       case 'INGRESADO':
-        return <span className="px-3.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold uppercase border border-blue-200">Ingresado</span>;
+        return (
+          <span className="px-3.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold uppercase border border-blue-200">
+            Aceptada en Taller
+          </span>
+        );
       case 'EN_REVISION':
-        return <span className="px-3.5 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-bold uppercase border border-indigo-200">En Revisión</span>;
+        return (
+          <span className="px-3.5 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-bold uppercase border border-indigo-200">
+            En Revisión
+          </span>
+        );
       case 'ESPERANDO_REPUESTO':
-        return <span className="px-3.5 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold uppercase border border-amber-200">Esperando Repuesto</span>;
+        return (
+          <span className="px-3.5 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold uppercase border border-amber-200">
+            Esperando Repuesto
+          </span>
+        );
       case 'EN_REPARACION':
-        return <span className="px-3.5 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-bold uppercase border border-orange-200 flex items-center gap-1"><Wrench className="w-3.5 h-3.5" /> En Reparación</span>;
+        return (
+          <span className="px-3.5 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-bold uppercase border border-orange-200 flex items-center gap-1">
+            <Wrench className="w-3.5 h-3.5" /> En Reparación
+          </span>
+        );
       case 'REPARADO':
+        return (
+          <span className="px-3.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold uppercase border border-emerald-200">
+            Reparado
+          </span>
+        );
       case 'LISTO_PARA_ENTREGA':
-        return <span className="px-3.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold uppercase border border-emerald-200">Listo para Entrega</span>;
+        return (
+          <span className="px-3.5 py-1 rounded-full bg-teal-50 text-teal-700 text-xs font-bold uppercase border border-teal-200">
+            Listo para Entrega
+          </span>
+        );
       case 'ENTREGADO':
-        return <span className="px-3.5 py-1 rounded-full bg-slate-100 text-slate-800 text-xs font-bold uppercase border border-slate-300">Entregado</span>;
+        return (
+          <span className="px-3.5 py-1 rounded-full bg-slate-100 text-slate-800 text-xs font-bold uppercase border border-slate-300">
+            Entregado
+          </span>
+        );
       default:
-        return <span className="px-3.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase">{status}</span>;
+        return (
+          <span className="px-3.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase">
+            {status}
+          </span>
+        );
     }
   };
+
+  const getStatusSummaryText = (status: string) => {
+    switch (status) {
+      case 'PENDIENTE':
+        return 'Tu orden fue ingresada y se encuentra pendiente de confirmación técnica.';
+      case 'ACEPTADA':
+      case 'INGRESADO':
+        return 'Tu orden fue aceptada formalmente en nuestro taller y está en cola para diagnóstico.';
+      case 'EN_REVISION':
+        return 'Un especialista técnico está revisando y diagnosticando tu dispositivo.';
+      case 'ESPERANDO_REPUESTO':
+        return 'Se solicitó un repuesto para tu equipo; reanudaremos el trabajo al recibir la pieza.';
+      case 'EN_REPARACION':
+        return 'El técnico especialista está ejecutando la reparación en el taller.';
+      case 'REPARADO':
+        return 'Tu dispositivo ha sido reparado con éxito y superó las pruebas de calidad.';
+      case 'LISTO_PARA_ENTREGA':
+        return 'Tu equipo está listo para entrega. Puedes acercarte a nuestro local a retirarlo.';
+      case 'ENTREGADO':
+        return 'El equipo ya fue entregado a su propietario. ¡Gracias por confiar en TecnoFix!';
+      default:
+        return 'Tu orden está en seguimiento.';
+    }
+  };
+
+  const order = data?.order;
+  const history = data?.history || [];
+
+  // Construir los pasos del timeline a partir del estado real y de data.history
+  const buildTimelineSteps = () => {
+    if (!order) return [];
+
+    const hasPendiente = order.currentStatus === 'PENDIENTE' || history.some(h => h.fromStatus === 'PENDIENTE' || h.toStatus === 'PENDIENTE');
+    const hasRepuesto = order.currentStatus === 'ESPERANDO_REPUESTO' || history.some(h => h.toStatus === 'ESPERANDO_REPUESTO');
+
+    const sequence: string[] = [];
+    if (hasPendiente) sequence.push('PENDIENTE');
+    sequence.push('ACEPTADA');
+    sequence.push('EN_REVISION');
+    if (hasRepuesto) sequence.push('ESPERANDO_REPUESTO');
+    sequence.push('EN_REPARACION');
+    sequence.push('REPARADO');
+    sequence.push('LISTO_PARA_ENTREGA');
+    sequence.push('ENTREGADO');
+
+    const currentIndex = sequence.indexOf(order.currentStatus);
+
+    return sequence.map((statusKey, index) => {
+      // Buscar el evento de historial más reciente para este estado
+      const historyEntry = [...history]
+        .reverse()
+        .find(h => 
+          h.toStatus === statusKey || 
+          (statusKey === 'ACEPTADA' && (h.toStatus === 'INGRESADO' || h.fromStatus === 'INGRESADO' || h.toStatus === 'ACEPTADA'))
+        );
+
+      const isCurrent = order.currentStatus === statusKey;
+      let isCompleted = false;
+
+      if (!isCurrent) {
+        if (currentIndex !== -1 && index < currentIndex) {
+          if (statusKey === 'ESPERANDO_REPUESTO') {
+            isCompleted = !!historyEntry;
+          } else {
+            isCompleted = true;
+          }
+        } else if (order.currentStatus === 'ENTREGADO') {
+          isCompleted = true;
+        }
+      }
+
+      let timeText = 'Pendiente';
+      if (historyEntry?.createdAt) {
+        timeText = formatDateTime(historyEntry.createdAt);
+      } else if (statusKey === 'ACEPTADA' || (statusKey === 'PENDIENTE' && hasPendiente)) {
+        timeText = formatDateTime(order.createdAt);
+      }
+
+      if (isCurrent && timeText !== 'Pendiente') {
+        timeText = `${timeText} • Estado actual`;
+      } else if (isCurrent) {
+        timeText = 'Actualmente en este estado';
+      }
+
+      return {
+        status: statusKey,
+        label: STATUS_LABELS[statusKey] || statusKey,
+        time: timeText,
+        completed: isCompleted,
+        current: isCurrent,
+      };
+    });
+  };
+
+  const timelineSteps = buildTimelineSteps();
 
   return (
     <div className="max-w-container-max mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
@@ -98,7 +226,7 @@ export const Tracking = () => {
             Estado de tu Dispositivo
           </h1>
           <p className="text-base text-[#434655]">
-            Rastrea el progreso y trazabilidad de tu reparación en tiempo real sin necesidad de iniciar sesión.
+            Rastrea el progreso y la trazabilidad de tu reparación en tiempo real sin necesidad de iniciar sesión.
           </p>
         </div>
 
@@ -107,16 +235,16 @@ export const Tracking = () => {
             <Search className="w-5 h-5 text-[#737686] absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Ingresa tu número de orden"
-              value={guideNumber}
-              onChange={(e) => setGuideNumber(e.target.value.toUpperCase())}
+              placeholder="Ingresa tu número de guía"
+              value={guideInput}
+              onChange={(e) => setGuideInput(e.target.value.toUpperCase())}
               className="w-full pl-11 pr-4 py-3 bg-white border border-[#E0E3E5] rounded-xl text-sm font-mono text-[#191C1E] uppercase focus:outline-none focus:border-primary shadow-sm"
             />
           </div>
           <button
             type="submit"
-            disabled={isFetching}
-            className="bg-primary hover:bg-[#003EA8] text-white px-5 py-3 rounded-xl text-sm font-semibold shadow-sm transition-colors flex-shrink-0"
+            disabled={isFetching || !guideInput.trim()}
+            className="bg-primary hover:bg-[#003EA8] text-white px-5 py-3 rounded-xl text-sm font-semibold shadow-sm transition-colors flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isFetching ? 'Buscando...' : 'Consultar'}
           </button>
@@ -127,12 +255,24 @@ export const Tracking = () => {
         <div className="p-5 bg-red-50 text-red-700 rounded-2xl border border-red-200 mb-8 flex items-center gap-3">
           <AlertCircle className="w-5 h-5 flex-shrink-0" />
           <p className="text-sm">
-            No se encontró ninguna orden asociada a la guía <strong>{guideNumber}</strong>. Revisa el código o consulta con soporte.
+            No se encontró ninguna orden de servicio asociada a la guía <strong className="font-mono">{searchedGuide}</strong>. Verifica el código o consulta con nuestro personal técnico.
           </p>
         </div>
       )}
 
-      {searched && (
+      {!searchedGuide && !order && (
+        <div className="bg-white rounded-2xl shadow-sm border border-[#E0E3E5] p-10 text-center max-w-xl mx-auto my-8">
+          <div className="w-16 h-16 bg-[#F2F4F6] text-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <Search className="w-8 h-8" />
+          </div>
+          <h3 className="text-xl font-bold text-[#191C1E] mb-2">Consulta el estado de tu equipo</h3>
+          <p className="text-sm text-[#737686]">
+            Ingresa tu número de guía en la barra superior para consultar el historial y el avance en tiempo real de tu dispositivo.
+          </p>
+        </div>
+      )}
+
+      {order && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Left Column: Tracker (8 cols) */}
           <div className="lg:col-span-8 flex flex-col gap-6">
@@ -147,7 +287,7 @@ export const Tracking = () => {
                     {order.deviceBrand} {order.deviceModel}
                   </h2>
                   <p className="text-xs text-[#737686] font-mono mt-0.5">
-                    Guía: {order.guideNumber} • Serial: {order.deviceSerial}
+                    Guía: <span className="font-bold text-[#191C1E]">{order.guideNumber}</span> • Serial: {order.deviceSerial || 'No registrado'}
                   </p>
                 </div>
               </div>
@@ -157,47 +297,67 @@ export const Tracking = () => {
 
             {/* Timeline Card */}
             <div className="bg-white rounded-2xl shadow-sm border border-[#E0E3E5] p-6 sm:p-8">
-              <h3 className="text-lg font-bold text-[#191C1E] mb-8 pb-3 border-b border-[#E0E3E5]">
-                Historial de Servicio
-              </h3>
-
-              <div className="relative pl-3">
-                {/* Vertical Line */}
-                <div className="absolute left-[29px] top-4 bottom-6 w-0.5 bg-[#E6E8EA]" />
-
-                {order.timeline.map((step, idx) => (
-                  <div key={idx} className="relative flex items-start gap-4 mb-7 last:mb-0">
-                    {/* Step Circle Indicator */}
-                    {step.completed ? (
-                      <div className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center z-10 shadow-sm flex-shrink-0">
-                        <Check className="w-5 h-5 stroke-[2.5]" />
-                      </div>
-                    ) : step.current ? (
-                      <div className="w-9 h-9 rounded-full bg-white border-2 border-primary ring-4 ring-primary/20 flex items-center justify-center z-10 flex-shrink-0">
-                        <div className="w-3 h-3 rounded-full bg-primary animate-pulse" />
-                      </div>
-                    ) : (
-                      <div className="w-9 h-9 rounded-full bg-[#ECEEF0] border-2 border-[#E0E3E5] flex items-center justify-center z-10 flex-shrink-0" />
-                    )}
-
-                    {/* Step Text */}
-                    <div className="pt-1.5 flex-1">
-                      <p
-                        className={`text-sm font-bold ${
-                          step.current
-                            ? 'text-primary'
-                            : step.completed
-                            ? 'text-[#191C1E]'
-                            : 'text-[#737686]'
-                        }`}
-                      >
-                        {step.label}
-                      </p>
-                      <p className="text-xs text-[#737686] mt-0.5">{step.time}</p>
-                    </div>
-                  </div>
-                ))}
+              <div className="flex justify-between items-center mb-8 pb-3 border-b border-[#E0E3E5]">
+                <h3 className="text-lg font-bold text-[#191C1E] flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-primary" />
+                  Historial de Servicio
+                </h3>
+                <span className="text-xs text-[#737686] font-medium">
+                  {history.length} {history.length === 1 ? 'registro' : 'registros'} en bitácora
+                </span>
               </div>
+
+              {history.length === 0 ? (
+                <div className="py-8 text-center text-[#737686] space-y-2">
+                  <AlertCircle className="w-8 h-8 mx-auto text-[#737686]/60" />
+                  <p className="text-sm font-semibold text-[#191C1E]">
+                    No se registran transiciones en el historial para esta orden todavía.
+                  </p>
+                  <p className="text-xs text-[#737686]">
+                    Estado actual: <strong className="text-primary">{STATUS_LABELS[order.currentStatus] || order.currentStatus}</strong>
+                  </p>
+                </div>
+              ) : (
+                <div className="relative pl-3">
+                  {/* Vertical Line */}
+                  <div className="absolute left-[29px] top-4 bottom-6 w-0.5 bg-[#E6E8EA]" />
+
+                  {timelineSteps.map((step, idx) => (
+                    <div key={idx} className="relative flex items-start gap-4 mb-7 last:mb-0">
+                      {/* Step Circle Indicator */}
+                      {step.completed ? (
+                        <div className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center z-10 shadow-sm flex-shrink-0">
+                          <Check className="w-5 h-5 stroke-[2.5]" />
+                        </div>
+                      ) : step.current ? (
+                        <div className="w-9 h-9 rounded-full bg-white border-2 border-primary ring-4 ring-primary/20 flex items-center justify-center z-10 flex-shrink-0">
+                          <div className="w-3 h-3 rounded-full bg-primary animate-pulse" />
+                        </div>
+                      ) : (
+                        <div className="w-9 h-9 rounded-full bg-[#ECEEF0] border-2 border-[#E0E3E5] flex items-center justify-center z-10 flex-shrink-0" />
+                      )}
+
+                      {/* Step Text */}
+                      <div className="pt-1.5 flex-1">
+                        <p
+                          className={`text-sm font-bold ${
+                            step.current
+                              ? 'text-primary'
+                              : step.completed
+                              ? 'text-[#191C1E]'
+                              : 'text-[#737686]'
+                          }`}
+                        >
+                          {step.label}
+                        </p>
+                        <p className={`text-xs mt-0.5 ${step.current ? 'text-primary font-medium' : 'text-[#737686]'}`}>
+                          {step.time}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
@@ -216,63 +376,57 @@ export const Tracking = () => {
                 </div>
                 <div>
                   <p className="text-xs text-[#737686]">Técnico Asignado</p>
-                  <p className="text-sm font-bold text-[#191C1E]">{order.technicianName}</p>
+                  <p className="text-sm font-bold text-[#191C1E]">
+                    {order.technicianId ? 'Técnico asignado por TecnoFix' : 'Pendiente de asignación'}
+                  </p>
                 </div>
               </div>
 
-              {/* Diagnosis breakdown */}
+              {/* Order breakdown */}
               <div className="space-y-4">
                 <div>
                   <p className="text-xs font-bold text-[#191C1E]">Problema Reportado</p>
                   <p className="text-xs text-[#434655] mt-1 bg-[#F7F9FB] p-2.5 rounded-xl border border-[#E0E3E5]/60">
-                    {order.problemDescription}
+                    {order.problemDescription || 'Sin descripción ingresada.'}
                   </p>
                 </div>
 
                 <div>
-                  <p className="text-xs font-bold text-[#191C1E]">Diagnóstico Oficial</p>
+                  <p className="text-xs font-bold text-[#191C1E]">Accesorios Recibidos</p>
                   <p className="text-xs text-[#434655] mt-1 bg-[#F7F9FB] p-2.5 rounded-xl border border-[#E0E3E5]/60">
-                    {order.diagnosis}
+                    {order.accessories || 'Ninguno reportado.'}
                   </p>
                 </div>
 
                 <div>
-                  <p className="text-xs font-bold text-[#191C1E]">Repuestos Utilizados</p>
-                  <p className="text-xs text-[#434655] mt-1">{order.partsUsed}</p>
+                  <p className="text-xs font-bold text-[#191C1E]">Resumen de Avance</p>
+                  <p className="text-xs text-primary font-medium mt-1 bg-primary/5 p-2.5 rounded-xl border border-primary/20 flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-primary flex-shrink-0" />
+                    {getStatusSummaryText(order.currentStatus)}
+                  </p>
                 </div>
               </div>
 
-              {/* Estimated Delivery */}
+              {/* Creation Date */}
               <div className="mt-6 pt-4 border-t border-[#E0E3E5]">
-                <p className="text-xs font-bold text-[#191C1E]">Fecha Estimada de Entrega</p>
+                <p className="text-xs font-bold text-[#191C1E]">Fecha de Ingreso al Taller</p>
                 <div className="flex items-center gap-2 mt-1.5 text-primary">
                   <Calendar className="w-4 h-4" />
-                  <span className="text-sm font-bold">{order.estimatedDelivery}</span>
+                  <span className="text-sm font-bold">{formatDateTime(order.createdAt)}</span>
                 </div>
               </div>
             </div>
 
-            {/* Photos Grid */}
+            {/* Photos Box */}
             <div className="bg-white rounded-2xl shadow-sm border border-[#E0E3E5] p-6">
               <h3 className="text-xs font-bold text-[#434655] uppercase tracking-wider mb-4 border-b border-[#E0E3E5] pb-2">
                 Estado de Recepción
               </h3>
-              <div className="grid grid-cols-2 gap-3">
-                {order.receptionPhotos.map((img, idx) => (
-                  <div
-                    key={idx}
-                    className="aspect-square rounded-xl overflow-hidden border border-[#E0E3E5] relative group"
-                  >
-                    <img
-                      src={img}
-                      alt={`Foto recepción ${idx + 1}`}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
-                ))}
+              <div className="bg-[#F7F9FB] h-24 rounded-xl flex items-center justify-center text-[#737686] text-xs font-medium border border-dashed border-[#E0E3E5] text-center p-3">
+                Sin fotografías registradas al momento del ingreso.
               </div>
               <p className="text-xs text-[#737686] mt-3 text-center">
-                Fotografías tomadas al ingresar el dispositivo.
+                El estado físico se registra en la orden de taller.
               </p>
             </div>
           </div>

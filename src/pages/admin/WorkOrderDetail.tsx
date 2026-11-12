@@ -8,9 +8,11 @@ import {
 } from '@/api/admin-hooks';
 import { useAdminTechnicians } from '@/api/admin/technician-hooks';
 import { AssignTechnicianDialog } from '@/components/admin/work-orders/AssignTechnicianDialog';
+import { UpdateStatusDialog } from '@/components/admin/work-orders/UpdateStatusDialog';
 
+// Secuencia operativa oficial del backend (excluyendo el estado ficticio INGRESADO)
 const STATUS_FLOW = [
-  'INGRESADO',
+  'ACEPTADA',
   'EN_REVISION',
   'ESPERANDO_REPUESTO',
   'EN_REPARACION',
@@ -20,7 +22,8 @@ const STATUS_FLOW = [
 ];
 
 const STATUS_LABELS: Record<string, string> = {
-  'INGRESADO': 'Ingreso',
+  'PENDIENTE': 'Pendiente',
+  'ACEPTADA': 'Aceptada',
   'EN_REVISION': 'Revisión',
   'ESPERANDO_REPUESTO': 'Repuesto',
   'EN_REPARACION': 'Reparación',
@@ -40,6 +43,7 @@ export const WorkOrderDetail: React.FC = () => {
   const technicians = techData?.items || [];
 
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState<boolean>(false);
+  const [isStatusDialogOpen, setIsStatusDialogOpen] = useState<boolean>(false);
 
   if (loadingOrder) {
     return (
@@ -61,7 +65,26 @@ export const WorkOrderDetail: React.FC = () => {
     );
   }
 
-  const currentStatusIndex = STATUS_FLOW.indexOf(order.currentStatus);
+  // Si la orden está o pasó por PENDIENTE, se incluye en el stepper; si viene de cita inicia en ACEPTADA
+  const stepperFlow = order.currentStatus === 'PENDIENTE' || history?.some(h => h.fromStatus === 'PENDIENTE' || h.toStatus === 'PENDIENTE')
+    ? ['PENDIENTE', ...STATUS_FLOW]
+    : STATUS_FLOW;
+
+  const currentStatusIndex = stepperFlow.indexOf(order.currentStatus);
+
+  const isStepCompleted = (status: string, index: number) => {
+    if (status === order.currentStatus) return false;
+    if (currentStatusIndex !== -1 && index < currentStatusIndex) {
+      // Si es ESPERANDO_REPUESTO (rama opcional de EN_REVISION), verificar si realmente se visitó
+      if (status === 'ESPERANDO_REPUESTO') {
+        const wasVisited = history?.some(h => h.toStatus === 'ESPERANDO_REPUESTO');
+        return !!wasVisited;
+      }
+      return true;
+    }
+    return false;
+  };
+
   const assignedTech = technicians.find((t) => t.id === order.technicianId);
   const technicianDisplayName = order.technician?.fullName || assignedTech?.fullName || (order.technicianId ? order.technicianId : 'No asignado');
   const customerDisplayName = order.customer?.fullName || appointment?.customerName || (order.customerId ? order.customerId : 'No asignado');
@@ -104,7 +127,11 @@ export const WorkOrderDetail: React.FC = () => {
           <button className="px-4 py-2 border border-outline-variant rounded-lg text-sm font-semibold hover:bg-surface-container transition-colors flex items-center gap-2">
             <span className="material-symbols-outlined text-sm">check_circle</span> Registrar Entrega
           </button>
-          <button className="bg-primary hover:bg-primary-container text-on-primary text-sm font-semibold px-4 py-2 rounded-lg transition-colors shadow-sm flex items-center gap-2">
+          <button 
+            type="button"
+            onClick={() => setIsStatusDialogOpen(true)}
+            className="bg-primary hover:bg-primary-container text-on-primary text-sm font-semibold px-4 py-2 rounded-lg transition-colors shadow-sm flex items-center gap-2"
+          >
             <span className="material-symbols-outlined text-sm">sync</span> Actualizar Estado
           </button>
         </div>
@@ -114,16 +141,35 @@ export const WorkOrderDetail: React.FC = () => {
       <div className="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/50 p-6 overflow-x-auto">
         <div className="min-w-[700px] flex justify-between items-center relative">
           <div className="absolute left-6 right-6 top-5 h-1 bg-surface-container-high -z-10"></div>
-          {STATUS_FLOW.map((status, index) => {
-            const isCompleted = index <= currentStatusIndex;
-            const isCurrent = index === currentStatusIndex;
+          {stepperFlow.map((status, index) => {
+            const isCompleted = isStepCompleted(status, index);
+            const isCurrent = status === order.currentStatus;
+
             return (
               <div key={status} className="flex flex-col items-center gap-2 relative z-10 w-24">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm border-4 border-surface-container-lowest transition-colors ${isCompleted ? 'bg-primary text-on-primary' : 'bg-surface-container-high text-on-surface-variant'}`}>
-                  {isCompleted ? <span className="material-symbols-outlined text-lg">check</span> : (index + 1)}
+                <div 
+                  className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm border-4 border-surface-container-lowest transition-all ${
+                    isCompleted 
+                      ? 'bg-primary text-on-primary' 
+                      : isCurrent 
+                      ? 'bg-primary text-on-primary ring-4 ring-primary/25 shadow-md' 
+                      : 'bg-surface-container-high text-on-surface-variant'
+                  }`}
+                >
+                  {isCompleted ? (
+                    <span className="material-symbols-outlined text-lg">check</span>
+                  ) : (
+                    index + 1
+                  )}
                 </div>
-                <span className={`text-xs font-semibold text-center ${isCurrent ? 'text-primary' : 'text-on-surface-variant'}`}>
-                  {STATUS_LABELS[status]}
+                <span className={`text-xs text-center font-semibold ${
+                  isCurrent 
+                    ? 'text-primary font-bold' 
+                    : isCompleted 
+                    ? 'text-on-surface' 
+                    : 'text-on-surface-variant'
+                }`}>
+                  {STATUS_LABELS[status] || status}
                 </span>
               </div>
             );
@@ -257,7 +303,9 @@ export const WorkOrderDetail: React.FC = () => {
                             {new Date(h.createdAt).toLocaleTimeString('es-ES', {hour: '2-digit', minute:'2-digit'})}
                           </span>
                         </div>
-                        <p className="text-on-surface-variant text-xs">De <span className="font-semibold">{h.fromStatus}</span> a <span className="font-semibold">{h.toStatus}</span></p>
+                        <p className="text-on-surface-variant text-xs">
+                          De <span className="font-semibold">{STATUS_LABELS[h.fromStatus] || h.fromStatus}</span> a <span className="font-semibold">{STATUS_LABELS[h.toStatus] || h.toStatus}</span>
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -292,6 +340,12 @@ export const WorkOrderDetail: React.FC = () => {
       <AssignTechnicianDialog
         isOpen={isAssignDialogOpen}
         onOpenChange={setIsAssignDialogOpen}
+        order={order}
+      />
+
+      <UpdateStatusDialog
+        isOpen={isStatusDialogOpen}
+        onOpenChange={setIsStatusDialogOpen}
         order={order}
       />
     </div>

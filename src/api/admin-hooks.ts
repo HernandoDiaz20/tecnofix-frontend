@@ -251,3 +251,7 @@ export const useAdminWorkOrderDiagnostics = (id: string | undefined) => {
     enabled: !!id
   });
 };
+
+
+// Re-exportar mutación de transición de estado
+export { useTransitionOrderStatus } from './work-orders';

@@ -65,6 +65,8 @@ export interface Appointment {
 }
 
 export type OrderStatus =
+  | 'PENDIENTE'
+  | 'ACEPTADA'
   | 'INGRESADO'
   | 'EN_REVISION'
   | 'ESPERANDO_REPUESTO'
