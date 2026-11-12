@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTrackWorkOrder } from '@/api/hooks';
 import { 
@@ -10,7 +10,8 @@ import {
   Wrench,
   UserCheck,
   Clock,
-  Sparkles
+  Sparkles,
+  Package
 } from 'lucide-react';
 
 const STATUS_LABELS: Record<string, string> = {
@@ -43,19 +44,29 @@ const formatDateTime = (dateStr?: string | null) => {
 };
 
 export const Tracking: React.FC = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const initialGuide = searchParams.get('guia') || searchParams.get('guide') || '';
 
   const [guideInput, setGuideInput] = useState(initialGuide);
   const [searchedGuide, setSearchedGuide] = useState(initialGuide);
 
-  const { data, refetch, isFetching, isError } = useTrackWorkOrder(searchedGuide);
+  const { data, isLoading, isFetching, isError, refetch } = useTrackWorkOrder(searchedGuide);
+
+  useEffect(() => {
+    const urlGuide = searchParams.get('guia') || searchParams.get('guide');
+    if (urlGuide && urlGuide.toUpperCase() !== searchedGuide) {
+      const upper = urlGuide.toUpperCase();
+      setGuideInput(upper);
+      setSearchedGuide(upper);
+    }
+  }, [searchParams]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     const cleanGuide = guideInput.trim().toUpperCase();
     if (cleanGuide) {
       setSearchedGuide(cleanGuide);
+      setSearchParams({ guia: cleanGuide });
       if (searchedGuide === cleanGuide) {
         refetch();
       }
@@ -97,8 +108,8 @@ export const Tracking: React.FC = () => {
         );
       case 'REPARADO':
         return (
-          <span className="px-3.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold uppercase border border-emerald-200">
-            Reparado
+          <span className="px-3.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold uppercase border border-emerald-200 flex items-center gap-1">
+            <Check className="w-3.5 h-3.5" /> Reparado
           </span>
         );
       case 'LISTO_PARA_ENTREGA':
@@ -223,7 +234,7 @@ export const Tracking: React.FC = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6">
         <div>
           <h1 className="text-3xl sm:text-4xl font-extrabold text-[#191C1E] tracking-tight mb-2">
-            Estado de tu Dispositivo
+            Seguimiento de Reparación
           </h1>
           <p className="text-base text-[#434655]">
             Rastrea el progreso y la trazabilidad de tu reparación en tiempo real sin necesidad de iniciar sesión.
@@ -251,6 +262,7 @@ export const Tracking: React.FC = () => {
         </form>
       </div>
 
+      {/* Alerta de Error: Guía no encontrada */}
       {isError && (
         <div className="p-5 bg-red-50 text-red-700 rounded-2xl border border-red-200 mb-8 flex items-center gap-3">
           <AlertCircle className="w-5 h-5 flex-shrink-0" />
@@ -260,7 +272,8 @@ export const Tracking: React.FC = () => {
         </div>
       )}
 
-      {!searchedGuide && !order && (
+      {/* Estado Inicial sin búsqueda */}
+      {!searchedGuide && !order && !isLoading && (
         <div className="bg-white rounded-2xl shadow-sm border border-[#E0E3E5] p-10 text-center max-w-xl mx-auto my-8">
           <div className="w-16 h-16 bg-[#F2F4F6] text-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
             <Search className="w-8 h-8" />
@@ -272,7 +285,16 @@ export const Tracking: React.FC = () => {
         </div>
       )}
 
-      {order && (
+      {/* Estado de Carga */}
+      {isLoading && (
+        <div className="py-20 text-center">
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-sm text-[#737686] font-medium">Buscando información de tu dispositivo en el taller...</p>
+        </div>
+      )}
+
+      {/* Detalle de la Orden Real */}
+      {order && !isLoading && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Left Column: Tracker (8 cols) */}
           <div className="lg:col-span-8 flex flex-col gap-6">
@@ -287,8 +309,13 @@ export const Tracking: React.FC = () => {
                     {order.deviceBrand} {order.deviceModel}
                   </h2>
                   <p className="text-xs text-[#737686] font-mono mt-0.5">
-                    Guía: <span className="font-bold text-[#191C1E]">{order.guideNumber}</span> • Serial: {order.deviceSerial || 'No registrado'}
+                    Guía: <strong className="text-primary">{order.guideNumber}</strong> • Serial: {order.deviceSerial || 'No registrado'}
                   </p>
+                  {(order as any).customer?.fullName && (
+                    <p className="text-xs text-[#434655] font-medium mt-1">
+                      Cliente: <span className="text-[#191C1E] font-semibold">{(order as any).customer.fullName}</span>
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -361,7 +388,7 @@ export const Tracking: React.FC = () => {
             </div>
           </div>
 
-          {/* Right Column: Details & Photos (4 cols) */}
+          {/* Right Column: Details & Information (4 cols) */}
           <div className="lg:col-span-4 flex flex-col gap-6">
             {/* Technician & Order Details */}
             <div className="bg-white rounded-2xl shadow-sm border border-[#E0E3E5] p-6">
@@ -371,13 +398,13 @@ export const Tracking: React.FC = () => {
 
               {/* Technician Info */}
               <div className="flex items-center gap-3 mb-6 p-3 bg-[#F7F9FB] rounded-xl border border-[#E0E3E5]">
-                <div className="w-11 h-11 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                <div className="w-11 h-11 rounded-full bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
                   <UserCheck className="w-6 h-6" />
                 </div>
                 <div>
                   <p className="text-xs text-[#737686]">Técnico Asignado</p>
                   <p className="text-sm font-bold text-[#191C1E]">
-                    {order.technicianId ? 'Técnico asignado por TecnoFix' : 'Pendiente de asignación'}
+                    {(order as any).technician?.fullName || (order.technicianId ? 'Técnico asignado por TecnoFix' : 'Pendiente de asignación')}
                   </p>
                 </div>
               </div>
@@ -385,9 +412,9 @@ export const Tracking: React.FC = () => {
               {/* Order breakdown */}
               <div className="space-y-4">
                 <div>
-                  <p className="text-xs font-bold text-[#191C1E]">Problema Reportado</p>
-                  <p className="text-xs text-[#434655] mt-1 bg-[#F7F9FB] p-2.5 rounded-xl border border-[#E0E3E5]/60">
-                    {order.problemDescription || 'Sin descripción ingresada.'}
+                  <p className="text-xs font-bold text-[#191C1E]">Problema / Falla Reportada</p>
+                  <p className="text-xs text-[#434655] mt-1 bg-[#F7F9FB] p-2.5 rounded-xl border border-[#E0E3E5]/60 leading-relaxed">
+                    {order.problemDescription || 'Sin descripción reportada.'}
                   </p>
                 </div>
 
@@ -415,19 +442,30 @@ export const Tracking: React.FC = () => {
                   <span className="text-sm font-bold">{formatDateTime(order.createdAt)}</span>
                 </div>
               </div>
+
+              {/* Scheduled / Appointment Date */}
+              {(order as any).scheduledTime && (
+                <div className="mt-4 pt-3 border-t border-[#E0E3E5]">
+                  <p className="text-xs font-bold text-[#191C1E]">Cita / Entrega Estimada</p>
+                  <div className="flex items-center gap-2 mt-1.5 text-primary">
+                    <Calendar className="w-4 h-4" />
+                    <span className="text-sm font-bold">{formatDateTime((order as any).scheduledTime)}</span>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Photos Box */}
-            <div className="bg-white rounded-2xl shadow-sm border border-[#E0E3E5] p-6">
-              <h3 className="text-xs font-bold text-[#434655] uppercase tracking-wider mb-4 border-b border-[#E0E3E5] pb-2">
-                Estado de Recepción
-              </h3>
-              <div className="bg-[#F7F9FB] h-24 rounded-xl flex items-center justify-center text-[#737686] text-xs font-medium border border-dashed border-[#E0E3E5] text-center p-3">
-                Sin fotografías registradas al momento del ingreso.
+            {/* Servicio Técnico Garantizado */}
+            <div className="bg-gradient-to-br from-[#0052D4]/5 to-[#4364F7]/5 rounded-2xl border border-primary/20 p-5">
+              <div className="flex items-start gap-3">
+                <Package className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs font-bold text-[#191C1E]">Servicio Técnico Garantizado</p>
+                  <p className="text-xs text-[#434655] mt-1 leading-relaxed">
+                    Toda reparación incluye garantía en repuestos originales y mano de obra calificada. Consulta tus documentos al retirar el equipo.
+                  </p>
+                </div>
               </div>
-              <p className="text-xs text-[#737686] mt-3 text-center">
-                El estado físico se registra en la orden de taller.
-              </p>
             </div>
           </div>
         </div>
