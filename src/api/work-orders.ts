@@ -92,10 +92,29 @@ export const useTransitionOrderStatus = () => {
       const response = await apiClient.patch<WorkOrder>(`/work-orders/${id}/status`, data);
       return response.data;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (updatedOrder, variables) => {
+      // Invalidar consultas de trabajo y administrador
       queryClient.invalidateQueries({ queryKey: ['work-orders'] });
       queryClient.invalidateQueries({ queryKey: ['work-order', variables.id] });
       queryClient.invalidateQueries({ queryKey: ['work-order-history', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['admin-work-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-work-order-detail', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['admin-work-order-history', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['admin-recent-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-orders-by-status'] });
+      queryClient.invalidateQueries({ queryKey: ['track'] });
+
+      // Actualizar inmediatamente la caché del detalle para respuesta visual instantánea
+      if (updatedOrder) {
+        queryClient.setQueryData(['admin-work-order-detail', variables.id], (old: any) => {
+          if (!old) return updatedOrder;
+          return {
+            ...old,
+            ...updatedOrder,
+            currentStatus: updatedOrder.currentStatus,
+          };
+        });
+      }
     },
   });
 };
@@ -111,6 +130,9 @@ export const useRegisterExitWorkOrder = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['work-orders'] });
       queryClient.invalidateQueries({ queryKey: ['work-order', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['admin-work-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-work-order-detail', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['admin-recent-orders'] });
     },
   });
 };
